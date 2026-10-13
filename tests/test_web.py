@@ -58,6 +58,10 @@ def test_analyze_preview_profile_and_job(client, fresh_server, tmp_path):
     assert st["status"] == "completed", st
     assert st["threads_completed"] == 7 and st["threads_duplicate"] == 1
     assert st["output_files"][0].endswith("Forum_Pages_0002-0003.txt")
+    dl = client.get(f"/api/jobs/{job}/files/0")
+    assert dl.status_code == 200 and "Forum_Pages_0002-0003.txt" in dl.headers["content-disposition"]
+    assert dl.text.count("ORIGINAL POST:") == 7
+    assert client.get(f"/api/jobs/{job}/files/5").status_code == 404
     tail = client.get(f"/api/jobs/{job}/output-preview").json()
     assert "ORIGINAL POST:" in tail["text"]
     log = client.get(f"/api/jobs/{job}/log?format=jsonl")

@@ -145,6 +145,7 @@ a{color:var(--accent)}
   <div id="jobMsg" class="msg hidden"></div>
   <div id="confirmBox" class="msg hidden"></div>
   <div class="stats" id="jobStats"></div>
+  <div id="filesBox" class="hidden" style="margin-bottom:12px"><h3 style="font-size:13px;margin:4px 0">Output files (click to download)</h3><div id="filesList"></div></div>
   <div class="two">
     <div><h3 style="font-size:13px;margin:4px 0">Recent errors</h3><div class="scroll"><table id="errTable"><tbody></tbody></table></div></div>
     <div><h3 style="font-size:13px;margin:4px 0">Current output (tail) <span id="outFile" class="muted"></span></h3><pre id="outTail" style="max-height:260px"></pre></div>
@@ -287,6 +288,13 @@ function renderJob(st) {
     ["Duplicate threads", st.threads_duplicate], ["Extraction confidence (last / avg)", `${last} / ${avg}`],
   ].map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join("") +
     `<div class="stat" style="grid-column:1/-1"><span>Current output file</span><div>${esc(st.current_output_file || "–")}</div></div>`;
+  const files = st.output_files || [];
+  $("filesBox").classList.toggle("hidden", !files.length);
+  $("filesList").innerHTML = files.map((f, i) => {
+    const name = f.split(/[\\/]/).pop();
+    const open = st.running && i === files.length - 1;
+    return `<div><a href="/api/jobs/${encodeURIComponent(st.id)}/files/${i}" download="${esc(name)}">${esc(name)}</a>${open ? ' <span class="muted">(still being filled)</span>' : ""}</div>`;
+  }).join("");
   $("errTable").querySelector("tbody").innerHTML = (st.recent_errors || []).map(e =>
     `<tr><td class="muted" style="white-space:nowrap">${esc(e.ts.slice(11, 19))}</td><td>${esc(e.message)}</td></tr>`).join("") || `<tr><td class="muted">none</td></tr>`;
   const pc = st.pending_confirmation;

@@ -248,6 +248,14 @@ def create_app(data: str | None = None) -> FastAPI:
         return PlainTextResponse("\n".join(lines) + "\n", media_type="application/x-ndjson",
                                  headers={"Content-Disposition": f'attachment; filename="job_{job_id}_log.jsonl"'})
 
+    @app.get("/api/jobs/{job_id}/files/{index}")
+    async def download_file(job_id: str, index: int):
+        files = _job(job_id)["output_files"]
+        if not 0 <= index < len(files) or not os.path.exists(files[index]):
+            raise HTTPException(404, "file not found (it may still be empty)")
+        return FileResponse(files[index], media_type="text/plain; charset=utf-8",
+                            filename=os.path.basename(files[index]))
+
     @app.get("/api/jobs/{job_id}/output-preview")
     async def output_preview(job_id: str, chars: int = 6000):
         st = _job(job_id)
