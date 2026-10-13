@@ -200,6 +200,8 @@ def xf2():
 <div class="block block--messages" data-xf-init="" data-type="post"><div class="block-container lbContainer"><div class="block-body js-replyNewMessageContainer">
 {''.join(posts)}
 </div></div></div>
+<div class="block-outer block-outer--after"><div class="block-outer-opposite"><div class="blockMessage blockMessage--alt">You must log in or register to reply here.</div></div></div>
+<script src="https://www.google.com/recaptcha/api.js?render=explicit" async></script>
 <div class="block"><div class="block-container"><h3 class="block-header">Similar threads</h3><div class="block-body">
 <div class="structItemContainer">{''.join(f'<div class="structItem"><div class="structItem-title"><a href="{tl(x)}">{esc(x["title"])}</a></div></div>' for x in THREADS[:3])}</div></div></div></div>"""
         opts = {"fail_times": 1} if t["id"] == 6 else {}
@@ -978,6 +980,12 @@ def misc():
 <body><div class="main-wrapper"><div class="main-content"><h1>Checking your browser before accessing the site.</h1>
 <div id="challenge-stage"><div class="cf-challenge"></div></div><script src="/cdn-cgi/challenge-platform/h/b/orchestrate/chl_page/v1"></script></div></div></body></html>""",
         status=403)
+    add("/xenforo2/index.php?threads/members-only.99/", "misc/xf_login_wall.html", """<!DOCTYPE html>
+<html id="XF" data-app="public" data-template="login"><head><title>Log in | Example Recovery Forum</title></head>
+<body><div class="p-body"><div class="p-body-inner"><div class="p-title"><h1 class="p-title-value">Log in</h1></div>
+<div class="blockMessage">You must be logged-in to do that.</div>
+<form action="index.php?login/login" method="post"><input name="login"><input type="password" name="password"><button>Log in</button></form>
+</div></div></body></html>""", status=403)
     add("/robots.txt", "misc/robots.txt", "User-agent: *\nDisallow: /private/\n", content_type="text/plain")
     add("/private/forum", "misc/private.html", "<html><body><a href='/private/t/1'>Secret thread one</a></body></html>")
     add("/plain/about", "misc/about.html", """<html><head><title>About us</title></head><body><nav><a href="/">Home</a></nav>

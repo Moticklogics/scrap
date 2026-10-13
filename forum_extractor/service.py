@@ -7,7 +7,7 @@ from dataclasses import replace
 from .browser import BrowserManager
 from .classifier import make_classifier
 from .config import JobConfig, SiteProfile
-from .detection import analyze_html, detect_blocking, detect_platform, suggest_profile
+from .detection import HARD_BLOCKS, analyze_html, detect_blocking, detect_platform, suggest_profile
 from .extraction import extract_original_post
 from .platforms import get_platform
 from .profiles import ProfileStore
@@ -32,8 +32,6 @@ async def test_thread(browser: BrowserManager, url: str, profile: SiteProfile | 
     snap = await browser.fetch(url)
     soup = await asyncio.to_thread(soup_from_html, snap.html)
     blocked = detect_blocking(snap.html, soup, snap.status)
-    if blocked:
-        return {"ok": False, "url": url, "error": f"access blocked: {blocked}", "candidates": [], "text": ""}
     spec = get_platform(platform_name) if platform_name else None
     if spec is None:
         match, _ = detect_platform(soup, snap.html, snap.final_url)
@@ -43,6 +41,8 @@ async def test_thread(browser: BrowserManager, url: str, profile: SiteProfile | 
         extract_original_post, soup, snap.final_url, spec, profile, cfg.confidence_threshold, cfg.exclude_quotes,
         cfg.mode == "manual", classifier, title)
     out = res.to_dict()
+    if not res.ok and blocked:
+        out["error"] = f"access restricted ({blocked}) and no post content was found. {res.error}"
     out["platform"] = spec.name if spec else "generic"
     out["http_status"] = snap.status
     return out

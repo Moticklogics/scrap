@@ -20,11 +20,16 @@ CAPTCHA_MARKERS = [
     (re.compile(r"g-recaptcha|recaptcha/api\.js|hcaptcha\.com|h-captcha|turnstile", re.I), "CAPTCHA"),
     (re.compile(r"Access denied|You don't have permission to access|Request blocked", re.I), "access denied"),
 ]
+# Phrases of a real login wall. Note: "You must log in or register to reply here." (shown under every
+# XenForo thread for guests) is NOT a wall, so the phrases require "view/see/access/read/do that".
 LOGIN_MARKERS = re.compile(
-    r"(you must be (logged|signed) in|you must log in|please (log|sign) in to (view|continue|read)|"
-    r"login required|you do not have permission to view this|members only)",
+    r"(you must be (logged|signed)[ -]in to (view|see|access|read|do that)|"
+    r"you must (log|sign) in( or register)? to (view|see|access|read)|"
+    r"please (log|sign) in to (view|continue|read|see|access)|login required|"
+    r"you do not have permission to view this|only (available|visible) to (registered )?members)",
     re.I,
 )
+HARD_BLOCKS = ("Cloudflare challenge", "CAPTCHA")
 
 
 @dataclass
@@ -163,6 +168,9 @@ def analyze_html(
     if profile and profile.has_post_selectors():
         if safe_select(soup, profile.first_post_selector or profile.post_container_selector):
             thread_score = max(thread_score, 0.85)
+    if blocked and (len(threads.links) >= 2 or thread_score >= 0.4):
+        notes.append(f"possible restriction ignored because content was found: {blocked}")
+        blocked = ""
     if blocked:
         page_type, ptc = "blocked", 1.0
     elif listing_score >= 0.4 and listing_score > thread_score:

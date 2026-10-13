@@ -69,3 +69,17 @@ def test_loop_protection_and_ambiguous_pagination():
 def test_blocking_detection():
     a = analyze_html(fixture_html("/blocked/forum"), FAKE_BASE + "/blocked/forum", status=403)
     assert a.page_type == "blocked"
+
+
+def test_guest_reply_notice_and_captcha_widget_are_not_a_login_wall():
+    """XenForo shows 'You must log in or register to reply here.' (and may load reCAPTCHA) on every thread."""
+    from forum_extractor.detection import detect_blocking
+    from forum_extractor.textutil import soup_from_html
+    route = "/xenforo2/index.php?threads/just-checking-in.4/"  # short single-post thread
+    html = fixture_html(route)
+    assert "You must log in or register to reply here." in html
+    a = analyze_html(html, FAKE_BASE + route)
+    assert a.page_type == "thread"
+    wall = fixture_html("/xenforo2/index.php?threads/members-only.99/")
+    assert detect_blocking(wall, soup_from_html(wall), 403)
+    assert analyze_html(wall, FAKE_BASE + "/x", status=403).page_type == "blocked"

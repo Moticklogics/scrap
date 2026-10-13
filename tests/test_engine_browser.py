@@ -257,3 +257,22 @@ def test_manual_mode_without_profile_fails_clearly(env):
     m, job = asyncio.run(go())
     st = m.status(job)
     assert st["status"] == "error" and "profile" in st["message"]
+
+
+def test_login_walled_thread_is_skipped_not_fatal(env):
+    from forum_extractor.service import test_thread as probe_thread
+    from forum_extractor.browser import BrowserManager
+
+    async def go():
+        b = BrowserManager(timeout=20, max_retries=0)
+        try:
+            ok = await probe_thread(b, env.server.base + "/xenforo2/index.php?threads/just-checking-in.4/", None,
+                                   env.cfg("/xenforo2/"))
+            wall = await probe_thread(b, env.server.base + "/xenforo2/index.php?threads/members-only.99/", None,
+                                     env.cfg("/xenforo2/"))
+            return ok, wall
+        finally:
+            await b.close()
+    ok, wall = asyncio.run(go())
+    assert ok["ok"] and ok["text"] == expected_text(BY_ID[4])
+    assert not wall["ok"] and "access restricted" in wall["error"]

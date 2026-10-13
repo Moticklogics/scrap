@@ -46,6 +46,8 @@ def routes_for(site: str, kind: str) -> list[str]:
         if not r.startswith(f"/{site}/"):
             continue
         f = info["file"]
+        if f.startswith("misc/"):
+            continue
         is_listing = any(k in f for k in ("forum_p", "category_p", "tag_p", "cat_p", "list_p", "board_p"))
         if (kind == "listing") == is_listing:
             out.append(r)

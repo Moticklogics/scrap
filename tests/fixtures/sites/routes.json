@@ -463,6 +463,10 @@
  "/xenforo2/index.php?threads/long-post-about-my-first-90-days.10/": {
   "file": "xenforo2/thread_10.html"
  },
+ "/xenforo2/index.php?threads/members-only.99/": {
+  "file": "misc/xf_login_wall.html",
+  "status": 403
+ },
  "/xenforo2/index.php?threads/my-tracking-script.7/": {
   "file": "xenforo2/thread_7.html"
  },

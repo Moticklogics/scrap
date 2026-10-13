@@ -11,7 +11,7 @@ from pathlib import Path
 from .browser import BlockedError, BrowserManager, FetchError, PageSnapshot
 from .classifier import make_classifier
 from .config import JobConfig, SiteProfile
-from .detection import analyze_html, detect_blocking, detect_platform, suggest_profile
+from .detection import HARD_BLOCKS, analyze_html, detect_blocking, detect_platform, suggest_profile
 from .extraction import extract_original_post
 from .platforms import PlatformSpec, get_platform
 from .profiles import ProfileStore
@@ -22,7 +22,6 @@ from .writer import OutputWriter, WriterError
 
 log = logging.getLogger("forum_extractor.engine")
 
-HARD_BLOCKS = ("Cloudflare challenge", "CAPTCHA")
 
 
 @dataclass
@@ -410,12 +409,6 @@ class JobRunner:
     async def _extract_snapshot(self, snap: PageSnapshot, title: str) -> Outcome:
         soup = await asyncio.to_thread(soup_from_html, snap.html)
         blocked = detect_blocking(snap.html, soup, snap.status)
-        if blocked:
-            if blocked in HARD_BLOCKS:
-                raise BlockedError(f"{blocked} on {snap.url}")
-            return Outcome("skipped", error=f"access restricted: {blocked}")
-        if snap.status and snap.status >= 400:
-            return Outcome("failed", error=f"HTTP {snap.status}")
         spec = self.spec
         if spec is None:
             match, _ = detect_platform(soup, snap.html, snap.final_url)
@@ -428,6 +421,12 @@ class JobRunner:
         if res.ok:
             self._maybe_learn(res)
             return Outcome("done", text=res.text, confidence=res.confidence, method=res.method, title=res.title)
+        if blocked in HARD_BLOCKS:  # challenge page and no post content: stop, never bypass
+            raise BlockedError(f"{blocked} on {snap.url}")
+        if blocked:  # login wall / 401 / 403 and no post content visible
+            return Outcome("skipped", error=f"access restricted: {blocked}", title=res.title)
+        if snap.status and snap.status >= 400:
+            return Outcome("failed", error=f"HTTP {snap.status}", title=res.title)
         return Outcome("failed", confidence=res.confidence or None, method=res.method, error=res.error,
                        title=res.title)
 
