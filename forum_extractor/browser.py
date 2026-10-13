@@ -104,6 +104,10 @@ class BrowserManager:
                 except Exception as exc:  # try the next candidate executable
                     last_exc = exc
             if self._browser is None:
+                if isinstance(last_exc, NotImplementedError):
+                    raise RuntimeError(
+                        "Chromium could not be started because of the asyncio event loop (Windows). Start the "
+                        "app with 'python -m forum_extractor serve'.") from last_exc
                 raise RuntimeError(
                     "Could not launch Chromium. Run 'python -m playwright install chromium' "
                     f"or set FORUM_EXTRACTOR_CHROMIUM. Last error: {last_exc}")

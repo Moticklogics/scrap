@@ -118,8 +118,16 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "serve":
         import uvicorn
         from .web.app import create_app
-        print(f"Forum extractor UI: http://{args.host}:{args.port}")
-        uvicorn.run(create_app(str(ddir)), host=args.host, port=args.port, log_level="warning")
+        print(f"Forum extractor UI: http://{args.host}:{args.port}  (press Ctrl+C to quit)")
+        server = uvicorn.Server(uvicorn.Config(create_app(str(ddir)), host=args.host, port=args.port,
+                                               log_level="warning"))
+        if sys.platform == "win32":
+            # Playwright must start Chromium as a subprocess, which on Windows needs the Proactor loop.
+            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+        try:
+            asyncio.run(server.serve())
+        except KeyboardInterrupt:
+            pass
         return 0
 
     db = Database(ddir / "state.sqlite3")

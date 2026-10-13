@@ -81,6 +81,21 @@ def create_app(data: str | None = None) -> FastAPI:
     async def _fetch_err(request, exc):
         return JSONResponse({"detail": f"Could not load the page: {exc}"}, status_code=502)
 
+    @app.exception_handler(Exception)
+    async def _any_error(request, exc):
+        import logging
+        import traceback
+        logging.getLogger("forum_extractor.web").error("request failed: %r", exc, exc_info=exc)
+        traceback.print_exception(exc)
+        msg = str(exc).strip().splitlines()[0] if str(exc).strip() else ""
+        hint = ""
+        if isinstance(exc, NotImplementedError):
+            hint = (" (Windows event-loop problem: start the app with 'python -m forum_extractor serve', "
+                    "not with uvicorn directly)")
+        elif "Executable doesn't exist" in str(exc) or "Could not launch Chromium" in str(exc):
+            hint = " (Chromium is missing: run 'python -m playwright install chromium')"
+        return JSONResponse({"detail": f"{type(exc).__name__}: {msg[:500]}{hint}"}, status_code=500)
+
     @app.exception_handler(BlockedError)
     async def _blocked(request, exc):
         return JSONResponse({"detail": f"Access blocked: {exc}"}, status_code=403)
