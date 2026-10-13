@@ -12,6 +12,11 @@ paste URL → Analyze & preview → (optionally correct selectors) → Start →
 
 ## Installation
 
+**Quick start:** on Windows double-click `start_windows.bat`; on macOS/Linux run `./start_mac_linux.sh`.
+The first start installs everything (a few minutes); later starts open the app directly.
+
+Manual installation:
+
 Requires Python 3.10+ (tested with 3.13).
 
 ```bash
