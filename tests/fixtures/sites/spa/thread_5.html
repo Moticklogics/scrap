@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Café thoughts: naïve résumé of my week</title></head>
+<body><div id="root">Loading…</div>
+<script>
+const DATA = {"title": "Caf\u00e9 thoughts: na\u00efve r\u00e9sum\u00e9 of my week", "posts": [{"n": 1, "author": "OPAuthor_5", "date": "Jan 5, 2024", "body": "<p>Je suis all\u00e9 au caf\u00e9 tous les jours. \u00a1Qu\u00e9 bien! \u4f60\u597d\uff0c\u4e16\u754c\u3002</p>\n<p>\u0421\u043f\u0430\u0441\u0438\u0431\u043e \u0437\u0430 \u043f\u043e\u0434\u0434\u0435\u0440\u0436\u043a\u0443 \u2014 \u00ab\u0443\u0434\u0430\u0447\u0438\u00bb.</p>"}, {"n": 2, "author": "Helper_A", "date": "Feb 1, 2024", "body": "<p>REPLY-MARKER-5a Merci!</p>"}]};
+
+setTimeout(function(){
+  let h = '<nav class="menu"><a href="/spa/board?p=1">Board</a></nav><h1>' + DATA.title + '</h1><div class="thread">';
+  for (const p of DATA.posts) {
+    h += '<div class="entry" id="post-' + p.n + '"><div class="byline"><span class="author">' + p.author + '</span> <span class="date">' + p.date + '</span></div>'
+       + '<div class="entry-body">' + p.body + '</div></div>';
+  }
+  h += '</div>';
+  document.getElementById('root').innerHTML = h;
+}, 50);
+
+</script></body></html>

@@ -1,0 +1,5 @@
+playwright>=1.44
+fastapi>=0.110
+uvicorn>=0.29
+beautifulsoup4>=4.12
+lxml>=5.0

@@ -1,0 +1,9 @@
+{"ts": "2026-10-13T20:04:19+00:00", "level": "info", "event": "job_start", "message": "job crawl started"}
+{"ts": "2026-10-13T20:04:21+00:00", "level": "info", "event": "listing_page", "message": "listing page 1: 4 threads (generic, confidence 0.90)"}
+{"ts": "2026-10-13T20:04:22+00:00", "level": "info", "event": "profile_learned", "message": "learned post selectors: 'div.tw-rounded.tw-border.tw-p-4.box' / 'div.prose.tw-mt-2'"}
+{"ts": "2026-10-13T20:04:23+00:00", "level": "info", "event": "listing_page", "message": "listing page 2: 4 threads (profile, confidence 0.85)"}
+{"ts": "2026-10-13T20:04:23+00:00", "level": "info", "event": "duplicate", "message": "duplicate: http://forum.example/community/posts/1-forum-rules-please-read-before-posting thread already processed (see its first occurrence)"}
+{"ts": "2026-10-13T20:04:25+00:00", "level": "info", "event": "listing_page", "message": "listing page 3: 5 threads (profile, confidence 0.85)"}
+{"ts": "2026-10-13T20:04:25+00:00", "level": "info", "event": "duplicate", "message": "duplicate: http://forum.example/community/posts/1-forum-rules-please-read-before-posting thread already processed (see its first occurrence)"}
+{"ts": "2026-10-13T20:04:27+00:00", "level": "error", "event": "extraction_failed", "message": "http://forum.example/community/posts/999-removed-discussion: no valid original-post candidate (text is mostly links). Configure selectors manually for this forum."}
+{"ts": "2026-10-13T20:04:27+00:00", "level": "info", "event": "end", "message": "last listing page reached (last page (previous-page link but no next-page link))"}

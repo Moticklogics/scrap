@@ -1,0 +1,126 @@
+================================================================================
+LISTING PAGE: 1
+THREAD TITLE: Forum rules - please read before posting
+THREAD URL: http://forum.example/community/posts/1-forum-rules-please-read-before-posting
+STATUS: Successfully extracted
+ORIGINAL POST:
+Welcome to the recovery forum. Please follow these rules:
+
+1. Be respectful to other members.
+2. No explicit content.
+3. Stay on topic.
+
+Moderators may remove posts that break the rules.
+================================================================================
+
+================================================================================
+LISTING PAGE: 1
+THREAD TITLE: Day 1: starting my journey
+THREAD URL: http://forum.example/community/posts/2-day-1-starting-my-journey
+STATUS: Successfully extracted
+ORIGINAL POST:
+Today is day one. I’m nervous but “determined” to change 🙂
+
+My plan is to exercise every morning and to journal every evening.
+================================================================================
+
+================================================================================
+LISTING PAGE: 1
+THREAD TITLE: Relapsed after 30 days - what now?
+THREAD URL: http://forum.example/community/posts/3-relapsed-after-30-days-what-now
+STATUS: Successfully extracted
+ORIGINAL POST:
+I relapsed last night after a 30 day streak.
+
+Things that helped me before:
+
+- Cold showers
+- Calling a friend
+- Going for a long walk
+
+Any advice is welcome.
+================================================================================
+
+================================================================================
+LISTING PAGE: 1
+THREAD TITLE: Just checking in
+THREAD URL: http://forum.example/community/posts/4-just-checking-in
+STATUS: Successfully extracted
+ORIGINAL POST:
+Just checking in to say week two is going well.
+================================================================================
+
+================================================================================
+LISTING PAGE: 2
+THREAD TITLE: Café thoughts: naïve résumé of my week
+THREAD URL: http://forum.example/community/posts/5-caf-thoughts-na-ve-r-sum-of-my-week
+STATUS: Successfully extracted
+ORIGINAL POST:
+Je suis allé au café tous les jours. ¡Qué bien! 你好，世界。
+
+Спасибо за поддержку — «удачи».
+================================================================================
+
+================================================================================
+LISTING PAGE: 2
+THREAD TITLE: Responding to an old thread
+THREAD URL: http://forum.example/community/posts/6-responding-to-an-old-thread
+STATUS: Successfully extracted
+ORIGINAL POST:
+I agree with the quote above, and here is my own experience.
+
+It took me three tries to get past the first month.
+================================================================================
+
+================================================================================
+LISTING PAGE: 2
+THREAD TITLE: My tracking script
+THREAD URL: http://forum.example/community/posts/7-my-tracking-script
+STATUS: Successfully extracted
+ORIGINAL POST:
+I wrote a tiny script to count days:
+
+days = (today - start).days
+if days > 30:
+    print("milestone <30> reached")
+
+Feel free to use it.
+================================================================================
+
+================================================================================
+LISTING PAGE: 3
+THREAD TITLE: Links and resources that helped
+THREAD URL: http://forum.example/community/posts/8-links-and-resources-that-helped
+STATUS: Successfully extracted
+ORIGINAL POST:
+I found this guide very useful, especially the second chapter.
+
+Also the book list on the wiki & the FAQ.
+================================================================================
+
+================================================================================
+LISTING PAGE: 3
+THREAD TITLE: Poem for anyone struggling
+THREAD URL: http://forum.example/community/posts/9-poem-for-anyone-struggling
+STATUS: Successfully extracted
+ORIGINAL POST:
+Roses fall but roots remain,
+storms will pass and light again,
+one more day, then one more day.
+
+Stay strong everyone.
+================================================================================
+
+================================================================================
+LISTING PAGE: 3
+THREAD TITLE: Long post about my first 90 days
+THREAD URL: http://forum.example/community/posts/10-long-post-about-my-first-90-days
+STATUS: Successfully extracted
+ORIGINAL POST:
+The first thirty days were the hardest. The first thirty days were the hardest. The first thirty days were the hardest. The first thirty days were the hardest. The first thirty days were the hardest. The first thirty days were the hardest.
+
+The second month I noticed better sleep and more energy. The second month I noticed better sleep and more energy. The second month I noticed better sleep and more energy. The second month I noticed better sleep and more energy. The second month I noticed better sleep and more energy.
+
+By day ninety I had new habits that felt natural.
+================================================================================
+

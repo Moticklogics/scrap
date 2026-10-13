@@ -1,0 +1,37 @@
+================================================================================
+LISTING PAGE: 3
+THREAD TITLE: Links and resources that helped
+THREAD URL: http://forum.example/xenforo2/index.php?threads/links-and-resources-that-helped.8/
+STATUS: Successfully extracted
+ORIGINAL POST:
+I found this guide very useful, especially the second chapter.
+
+Also the book list on the wiki & the FAQ.
+================================================================================
+
+================================================================================
+LISTING PAGE: 3
+THREAD TITLE: Poem for anyone struggling
+THREAD URL: http://forum.example/xenforo2/index.php?threads/poem-for-anyone-struggling.9/
+STATUS: Successfully extracted
+ORIGINAL POST:
+Roses fall but roots remain,
+storms will pass and light again,
+one more day, then one more day.
+
+Stay strong everyone.
+================================================================================
+
+================================================================================
+LISTING PAGE: 3
+THREAD TITLE: Long post about my first 90 days
+THREAD URL: http://forum.example/xenforo2/index.php?threads/long-post-about-my-first-90-days.10/
+STATUS: Successfully extracted
+ORIGINAL POST:
+The first thirty days were the hardest. The first thirty days were the hardest. The first thirty days were the hardest. The first thirty days were the hardest. The first thirty days were the hardest. The first thirty days were the hardest.
+
+The second month I noticed better sleep and more energy. The second month I noticed better sleep and more energy. The second month I noticed better sleep and more energy. The second month I noticed better sleep and more energy. The second month I noticed better sleep and more energy.
+
+By day ninety I had new habits that felt natural.
+================================================================================
+

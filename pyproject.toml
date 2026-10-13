@@ -1,0 +1,22 @@
+[project]
+name = "forum-extractor"
+version = "1.0.0"
+description = "Universal forum original-post extractor: URL in, TXT out"
+requires-python = ">=3.10"
+dependencies = ["playwright>=1.44", "fastapi>=0.110", "uvicorn>=0.29", "beautifulsoup4>=4.12", "lxml>=5.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "httpx>=0.27"]
+
+[project.scripts]
+forum-extractor = "forum_extractor.cli:main"
+
+[tool.setuptools]
+packages = ["forum_extractor", "forum_extractor.web"]
+
+[tool.setuptools.package-data]
+"forum_extractor.web" = ["static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["browser: tests that drive a real Chromium through Playwright"]

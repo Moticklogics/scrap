@@ -1,0 +1,52 @@
+================================================================================
+LISTING PAGE: 2
+THREAD TITLE: Forum rules - please read before posting
+THREAD URL: http://forum.example/xenforo2/index.php?threads/forum-rules-please-read-before-posting.1/
+STATUS: Successfully extracted
+ORIGINAL POST:
+Welcome to the recovery forum. Please follow these rules:
+
+1. Be respectful to other members.
+2. No explicit content.
+3. Stay on topic.
+
+Moderators may remove posts that break the rules.
+================================================================================
+
+================================================================================
+LISTING PAGE: 2
+THREAD TITLE: Café thoughts: naïve résumé of my week
+THREAD URL: http://forum.example/xenforo2/index.php?threads/caf-thoughts-na-ve-r-sum-of-my-week.5/
+STATUS: Successfully extracted
+ORIGINAL POST:
+Je suis allé au café tous les jours. ¡Qué bien! 你好，世界。
+
+Спасибо за поддержку — «удачи».
+================================================================================
+
+================================================================================
+LISTING PAGE: 2
+THREAD TITLE: Responding to an old thread
+THREAD URL: http://forum.example/xenforo2/index.php?threads/responding-to-an-old-thread.6/
+STATUS: Successfully extracted
+ORIGINAL POST:
+I agree with the quote above, and here is my own experience.
+
+It took me three tries to get past the first month.
+================================================================================
+
+================================================================================
+LISTING PAGE: 2
+THREAD TITLE: My tracking script
+THREAD URL: http://forum.example/xenforo2/index.php?threads/my-tracking-script.7/
+STATUS: Successfully extracted
+ORIGINAL POST:
+I wrote a tiny script to count days:
+
+days = (today - start).days
+if days > 30:
+    print("milestone <30> reached")
+
+Feel free to use it.
+================================================================================
+

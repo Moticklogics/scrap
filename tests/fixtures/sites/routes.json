@@ -1,0 +1,479 @@
+{
+ "/ambig/list": {
+  "file": "ambig/list1.html"
+ },
+ "/ambig/list?offset=20": {
+  "file": "ambig/list2.html"
+ },
+ "/ambig/topic.php?id=2": {
+  "file": "oldboard/topic_2.html"
+ },
+ "/ambig/topic.php?id=3": {
+  "file": "oldboard/topic_3.html"
+ },
+ "/ambig/topic.php?id=5": {
+  "file": "oldboard/topic_5.html"
+ },
+ "/ambig/topic.php?id=6": {
+  "file": "oldboard/topic_6.html"
+ },
+ "/ambig/topic.php?id=8": {
+  "file": "oldboard/topic_8.html"
+ },
+ "/ambig/topic.php?id=9": {
+  "file": "oldboard/topic_9.html"
+ },
+ "/blocked/forum": {
+  "file": "misc/blocked.html",
+  "status": 403
+ },
+ "/community/": {
+  "file": "community/list_p1.html"
+ },
+ "/community/?page=2": {
+  "file": "community/list_p2.html"
+ },
+ "/community/?page=3": {
+  "file": "community/list_p3.html"
+ },
+ "/community/posts/1-forum-rules-please-read-before-posting": {
+  "file": "community/post_1.html"
+ },
+ "/community/posts/10-long-post-about-my-first-90-days": {
+  "file": "community/post_10.html"
+ },
+ "/community/posts/2-day-1-starting-my-journey": {
+  "file": "community/post_2.html"
+ },
+ "/community/posts/3-relapsed-after-30-days-what-now": {
+  "file": "community/post_3.html"
+ },
+ "/community/posts/4-just-checking-in": {
+  "file": "community/post_4.html"
+ },
+ "/community/posts/5-caf-thoughts-na-ve-r-sum-of-my-week": {
+  "file": "community/post_5.html"
+ },
+ "/community/posts/6-responding-to-an-old-thread": {
+  "file": "community/post_6.html"
+ },
+ "/community/posts/7-my-tracking-script": {
+  "file": "community/post_7.html"
+ },
+ "/community/posts/8-links-and-resources-that-helped": {
+  "file": "community/post_8.html"
+ },
+ "/community/posts/9-poem-for-anyone-struggling": {
+  "file": "community/post_9.html"
+ },
+ "/community/posts/999-removed-discussion": {
+  "file": "community/post_999.html"
+ },
+ "/discourse/c/general/5": {
+  "file": "discourse/category_p1.html"
+ },
+ "/discourse/c/general/5?page=1": {
+  "file": "discourse/category_p2.html"
+ },
+ "/discourse/c/general/5?page=2": {
+  "file": "discourse/category_p3.html"
+ },
+ "/discourse/c/general/5?page=3": {
+  "file": "discourse/category_p4.html"
+ },
+ "/discourse/t/caf-thoughts-na-ve-r-sum-of-my-week/5": {
+  "file": "discourse/topic_5.html"
+ },
+ "/discourse/t/day-1-starting-my-journey/2": {
+  "file": "discourse/topic_2.html"
+ },
+ "/discourse/t/forum-rules-please-read-before-posting/1": {
+  "file": "discourse/topic_1.html"
+ },
+ "/discourse/t/just-checking-in/4": {
+  "file": "discourse/topic_4.html"
+ },
+ "/discourse/t/links-and-resources-that-helped/8": {
+  "file": "discourse/topic_8.html"
+ },
+ "/discourse/t/long-post-about-my-first-90-days/10": {
+  "file": "discourse/topic_10.html"
+ },
+ "/discourse/t/my-tracking-script/7": {
+  "file": "discourse/topic_7.html"
+ },
+ "/discourse/t/poem-for-anyone-struggling/9": {
+  "file": "discourse/topic_9.html"
+ },
+ "/discourse/t/relapsed-after-30-days-what-now/3": {
+  "file": "discourse/topic_3.html"
+ },
+ "/discourse/t/responding-to-an-old-thread/6": {
+  "file": "discourse/topic_6.html"
+ },
+ "/flarum/d/1-forum-rules-please-read-before-posting": {
+  "file": "flarum/d_1.html"
+ },
+ "/flarum/d/10-long-post-about-my-first-90-days": {
+  "file": "flarum/d_10.html"
+ },
+ "/flarum/d/2-day-1-starting-my-journey": {
+  "file": "flarum/d_2.html"
+ },
+ "/flarum/d/3-relapsed-after-30-days-what-now": {
+  "file": "flarum/d_3.html"
+ },
+ "/flarum/d/4-just-checking-in": {
+  "file": "flarum/d_4.html"
+ },
+ "/flarum/d/5-caf-thoughts-na-ve-r-sum-of-my-week": {
+  "file": "flarum/d_5.html"
+ },
+ "/flarum/d/6-responding-to-an-old-thread": {
+  "file": "flarum/d_6.html"
+ },
+ "/flarum/d/7-my-tracking-script": {
+  "file": "flarum/d_7.html"
+ },
+ "/flarum/d/8-links-and-resources-that-helped": {
+  "file": "flarum/d_8.html"
+ },
+ "/flarum/d/9-poem-for-anyone-struggling": {
+  "file": "flarum/d_9.html"
+ },
+ "/flarum/t/general": {
+  "file": "flarum/tag_p1.html"
+ },
+ "/flarum/t/general?page=2": {
+  "file": "flarum/tag_p2.html"
+ },
+ "/flarum/t/general?page=3": {
+  "file": "flarum/tag_p3.html"
+ },
+ "/nodebb/category/2/general-discussion": {
+  "file": "nodebb/category_p1.html"
+ },
+ "/nodebb/category/2/general-discussion?page=2": {
+  "file": "nodebb/category_p2.html"
+ },
+ "/nodebb/category/2/general-discussion?page=3": {
+  "file": "nodebb/category_p3.html"
+ },
+ "/nodebb/topic/1/forum-rules-please-read-before-posting": {
+  "file": "nodebb/topic_1.html"
+ },
+ "/nodebb/topic/10/long-post-about-my-first-90-days": {
+  "file": "nodebb/topic_10.html"
+ },
+ "/nodebb/topic/2/day-1-starting-my-journey": {
+  "file": "nodebb/topic_2.html"
+ },
+ "/nodebb/topic/3/relapsed-after-30-days-what-now": {
+  "file": "nodebb/topic_3.html"
+ },
+ "/nodebb/topic/4/just-checking-in": {
+  "file": "nodebb/topic_4.html"
+ },
+ "/nodebb/topic/5/caf-thoughts-na-ve-r-sum-of-my-week": {
+  "file": "nodebb/topic_5.html"
+ },
+ "/nodebb/topic/6/responding-to-an-old-thread": {
+  "file": "nodebb/topic_6.html"
+ },
+ "/nodebb/topic/7/my-tracking-script": {
+  "file": "nodebb/topic_7.html"
+ },
+ "/nodebb/topic/8/links-and-resources-that-helped": {
+  "file": "nodebb/topic_8.html"
+ },
+ "/nodebb/topic/9/poem-for-anyone-struggling": {
+  "file": "nodebb/topic_9.html"
+ },
+ "/oldboard/forum.php?cat=3": {
+  "file": "oldboard/forum_p1.html"
+ },
+ "/oldboard/forum.php?cat=3&pg=2": {
+  "file": "oldboard/forum_p2.html"
+ },
+ "/oldboard/forum.php?cat=3&pg=3": {
+  "file": "oldboard/forum_p3.html"
+ },
+ "/oldboard/topic.php?id=1": {
+  "file": "oldboard/topic_1.html"
+ },
+ "/oldboard/topic.php?id=10": {
+  "file": "oldboard/topic_10.html"
+ },
+ "/oldboard/topic.php?id=2": {
+  "file": "oldboard/topic_2.html"
+ },
+ "/oldboard/topic.php?id=3": {
+  "file": "oldboard/topic_3.html"
+ },
+ "/oldboard/topic.php?id=4": {
+  "file": "oldboard/topic_4.html"
+ },
+ "/oldboard/topic.php?id=5": {
+  "file": "oldboard/topic_5.html"
+ },
+ "/oldboard/topic.php?id=6": {
+  "file": "oldboard/topic_6.html"
+ },
+ "/oldboard/topic.php?id=7": {
+  "file": "oldboard/topic_7.html"
+ },
+ "/oldboard/topic.php?id=8": {
+  "file": "oldboard/topic_8.html"
+ },
+ "/oldboard/topic.php?id=9": {
+  "file": "oldboard/topic_9.html"
+ },
+ "/phpbb/viewforum.php?f=2": {
+  "file": "phpbb/forum_p1.html"
+ },
+ "/phpbb/viewforum.php?f=2&start=10": {
+  "file": "phpbb/forum_p2.html"
+ },
+ "/phpbb/viewforum.php?f=2&start=20": {
+  "file": "phpbb/forum_p3.html"
+ },
+ "/phpbb/viewtopic.php?f=2&t=1": {
+  "file": "phpbb/topic_1.html"
+ },
+ "/phpbb/viewtopic.php?f=2&t=10": {
+  "file": "phpbb/topic_10.html"
+ },
+ "/phpbb/viewtopic.php?f=2&t=2": {
+  "file": "phpbb/topic_2.html"
+ },
+ "/phpbb/viewtopic.php?f=2&t=3": {
+  "file": "phpbb/topic_3.html"
+ },
+ "/phpbb/viewtopic.php?f=2&t=4": {
+  "file": "phpbb/topic_4.html"
+ },
+ "/phpbb/viewtopic.php?f=2&t=5": {
+  "file": "phpbb/topic_5.html"
+ },
+ "/phpbb/viewtopic.php?f=2&t=6": {
+  "file": "phpbb/topic_6.html"
+ },
+ "/phpbb/viewtopic.php?f=2&t=7": {
+  "file": "phpbb/topic_7.html"
+ },
+ "/phpbb/viewtopic.php?f=2&t=8": {
+  "file": "phpbb/topic_8.html"
+ },
+ "/phpbb/viewtopic.php?f=2&t=9": {
+  "file": "phpbb/topic_9.html"
+ },
+ "/plain/about": {
+  "file": "misc/about.html"
+ },
+ "/private/forum": {
+  "file": "misc/private.html"
+ },
+ "/robots.txt": {
+  "content_type": "text/plain",
+  "file": "misc/robots.txt"
+ },
+ "/spa/board?p=1": {
+  "file": "spa/board_p1.html"
+ },
+ "/spa/board?p=2": {
+  "file": "spa/board_p2.html"
+ },
+ "/spa/board?p=3": {
+  "file": "spa/board_p3.html"
+ },
+ "/spa/thread/1": {
+  "file": "spa/thread_1.html"
+ },
+ "/spa/thread/10": {
+  "file": "spa/thread_10.html"
+ },
+ "/spa/thread/2": {
+  "file": "spa/thread_2.html"
+ },
+ "/spa/thread/3": {
+  "file": "spa/thread_3.html"
+ },
+ "/spa/thread/4": {
+  "file": "spa/thread_4.html"
+ },
+ "/spa/thread/5": {
+  "file": "spa/thread_5.html"
+ },
+ "/spa/thread/6": {
+  "file": "spa/thread_6.html"
+ },
+ "/spa/thread/7": {
+  "file": "spa/thread_7.html"
+ },
+ "/spa/thread/8": {
+  "file": "spa/thread_8.html"
+ },
+ "/spa/thread/9": {
+  "file": "spa/thread_9.html"
+ },
+ "/vanilla/categories/general": {
+  "file": "vanilla/cat_p1.html"
+ },
+ "/vanilla/categories/general/p1": {
+  "file": "vanilla/cat_p1.html"
+ },
+ "/vanilla/categories/general/p2": {
+  "file": "vanilla/cat_p2.html"
+ },
+ "/vanilla/categories/general/p3": {
+  "file": "vanilla/cat_p3.html"
+ },
+ "/vanilla/discussion/1/forum-rules-please-read-before-posting": {
+  "file": "vanilla/d_1.html"
+ },
+ "/vanilla/discussion/10/long-post-about-my-first-90-days": {
+  "file": "vanilla/d_10.html"
+ },
+ "/vanilla/discussion/2/day-1-starting-my-journey": {
+  "file": "vanilla/d_2.html"
+ },
+ "/vanilla/discussion/3/relapsed-after-30-days-what-now": {
+  "file": "vanilla/d_3.html"
+ },
+ "/vanilla/discussion/4/just-checking-in": {
+  "file": "vanilla/d_4.html"
+ },
+ "/vanilla/discussion/5/caf-thoughts-na-ve-r-sum-of-my-week": {
+  "file": "vanilla/d_5.html"
+ },
+ "/vanilla/discussion/6/responding-to-an-old-thread": {
+  "file": "vanilla/d_6.html"
+ },
+ "/vanilla/discussion/7/my-tracking-script": {
+  "file": "vanilla/d_7.html"
+ },
+ "/vanilla/discussion/8/links-and-resources-that-helped": {
+  "file": "vanilla/d_8.html"
+ },
+ "/vanilla/discussion/9/poem-for-anyone-struggling": {
+  "file": "vanilla/d_9.html"
+ },
+ "/vbulletin/forumdisplay.php?f=5": {
+  "file": "vbulletin/forum_p1.html"
+ },
+ "/vbulletin/forumdisplay.php?f=5&page=2": {
+  "file": "vbulletin/forum_p2.html"
+ },
+ "/vbulletin/forumdisplay.php?f=5&page=3": {
+  "file": "vbulletin/forum_p3.html"
+ },
+ "/vbulletin/showthread.php?t=1": {
+  "file": "vbulletin/thread_1.html"
+ },
+ "/vbulletin/showthread.php?t=10": {
+  "file": "vbulletin/thread_10.html"
+ },
+ "/vbulletin/showthread.php?t=2": {
+  "file": "vbulletin/thread_2.html"
+ },
+ "/vbulletin/showthread.php?t=3": {
+  "file": "vbulletin/thread_3.html"
+ },
+ "/vbulletin/showthread.php?t=4": {
+  "file": "vbulletin/thread_4.html"
+ },
+ "/vbulletin/showthread.php?t=5": {
+  "file": "vbulletin/thread_5.html"
+ },
+ "/vbulletin/showthread.php?t=6": {
+  "file": "vbulletin/thread_6.html"
+ },
+ "/vbulletin/showthread.php?t=7": {
+  "file": "vbulletin/thread_7.html"
+ },
+ "/vbulletin/showthread.php?t=8": {
+  "file": "vbulletin/thread_8.html"
+ },
+ "/vbulletin/showthread.php?t=9": {
+  "file": "vbulletin/thread_9.html"
+ },
+ "/xenforo1/index.php?forums/general.3/": {
+  "file": "xenforo1/forum_p1.html"
+ },
+ "/xenforo1/index.php?forums/general.3/page-2": {
+  "file": "xenforo1/forum_p2.html"
+ },
+ "/xenforo1/index.php?forums/general.3/page-3": {
+  "file": "xenforo1/forum_p3.html"
+ },
+ "/xenforo1/index.php?threads/caf-thoughts-na-ve-r-sum-of-my-week.5/": {
+  "file": "xenforo1/thread_5.html"
+ },
+ "/xenforo1/index.php?threads/day-1-starting-my-journey.2/": {
+  "file": "xenforo1/thread_2.html"
+ },
+ "/xenforo1/index.php?threads/forum-rules-please-read-before-posting.1/": {
+  "file": "xenforo1/thread_1.html"
+ },
+ "/xenforo1/index.php?threads/just-checking-in.4/": {
+  "file": "xenforo1/thread_4.html"
+ },
+ "/xenforo1/index.php?threads/links-and-resources-that-helped.8/": {
+  "file": "xenforo1/thread_8.html"
+ },
+ "/xenforo1/index.php?threads/long-post-about-my-first-90-days.10/": {
+  "file": "xenforo1/thread_10.html"
+ },
+ "/xenforo1/index.php?threads/my-tracking-script.7/": {
+  "file": "xenforo1/thread_7.html"
+ },
+ "/xenforo1/index.php?threads/poem-for-anyone-struggling.9/": {
+  "file": "xenforo1/thread_9.html"
+ },
+ "/xenforo1/index.php?threads/relapsed-after-30-days-what-now.3/": {
+  "file": "xenforo1/thread_3.html"
+ },
+ "/xenforo1/index.php?threads/responding-to-an-old-thread.6/": {
+  "file": "xenforo1/thread_6.html"
+ },
+ "/xenforo2/index.php?forums/recovery.2/": {
+  "file": "xenforo2/forum_p1.html"
+ },
+ "/xenforo2/index.php?forums/recovery.2/page-2": {
+  "file": "xenforo2/forum_p2.html"
+ },
+ "/xenforo2/index.php?forums/recovery.2/page-3": {
+  "file": "xenforo2/forum_p3.html"
+ },
+ "/xenforo2/index.php?threads/caf-thoughts-na-ve-r-sum-of-my-week.5/": {
+  "file": "xenforo2/thread_5.html"
+ },
+ "/xenforo2/index.php?threads/day-1-starting-my-journey.2/": {
+  "file": "xenforo2/thread_2.html"
+ },
+ "/xenforo2/index.php?threads/forum-rules-please-read-before-posting.1/": {
+  "file": "xenforo2/thread_1.html"
+ },
+ "/xenforo2/index.php?threads/just-checking-in.4/": {
+  "file": "xenforo2/thread_4.html"
+ },
+ "/xenforo2/index.php?threads/links-and-resources-that-helped.8/": {
+  "file": "xenforo2/thread_8.html"
+ },
+ "/xenforo2/index.php?threads/long-post-about-my-first-90-days.10/": {
+  "file": "xenforo2/thread_10.html"
+ },
+ "/xenforo2/index.php?threads/my-tracking-script.7/": {
+  "file": "xenforo2/thread_7.html"
+ },
+ "/xenforo2/index.php?threads/poem-for-anyone-struggling.9/": {
+  "file": "xenforo2/thread_9.html"
+ },
+ "/xenforo2/index.php?threads/relapsed-after-30-days-what-now.3/": {
+  "file": "xenforo2/thread_3.html"
+ },
+ "/xenforo2/index.php?threads/responding-to-an-old-thread.6/": {
+  "fail_times": 1,
+  "file": "xenforo2/thread_6.html"
+ }
+}

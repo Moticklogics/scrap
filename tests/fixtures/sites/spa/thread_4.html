@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Just checking in</title></head>
+<body><div id="root">Loading…</div>
+<script>
+const DATA = {"title": "Just checking in", "posts": [{"n": 1, "author": "OPAuthor_4", "date": "Jan 4, 2024", "body": "<p>Just checking in to say week two is going well.</p>"}]};
+
+setTimeout(function(){
+  let h = '<nav class="menu"><a href="/spa/board?p=1">Board</a></nav><h1>' + DATA.title + '</h1><div class="thread">';
+  for (const p of DATA.posts) {
+    h += '<div class="entry" id="post-' + p.n + '"><div class="byline"><span class="author">' + p.author + '</span> <span class="date">' + p.date + '</span></div>'
+       + '<div class="entry-body">' + p.body + '</div></div>';
+  }
+  h += '</div>';
+  document.getElementById('root').innerHTML = h;
+}, 50);
+
+</script></body></html>

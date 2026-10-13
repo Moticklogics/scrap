@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Board</title></head>
+<body><div id="root">Loading…</div>
+<script>
+const DATA = {"threads": [{"id": 1, "title": "Forum rules - please read before posting", "author": "OPAuthor_1", "replies": 1}, {"id": 5, "title": "Caf\u00e9 thoughts: na\u00efve r\u00e9sum\u00e9 of my week", "author": "OPAuthor_5", "replies": 1}, {"id": 6, "title": "Responding to an old thread", "author": "OPAuthor_6", "replies": 1}, {"id": 7, "title": "My tracking script", "author": "OPAuthor_7", "replies": 1}], "prev": 1, "next": 3};
+
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+setTimeout(function(){
+  let h = '<nav class="menu"><a href="/spa/board?p=1">Board</a> <a href="/spa/login">Login</a></nav>';
+  h += '<h1>Board</h1><ol class="items">';
+  for (const t of DATA.threads) {
+    h += '<li class="item"><a class="link" href="/spa/thread/' + t.id + '">' + esc(t.title) + '</a>'
+       + '<p class="meta">by <a href="/spa/user/' + t.author + '">' + t.author + '</a> · ' + t.replies + ' replies</p></li>';
+  }
+  h += '</ol><div class="pager">';
+  if (DATA.prev) h += '<a class="prev" href="/spa/board?p=' + DATA.prev + '">‹ Previous</a> ';
+  if (DATA.next) h += '<a class="next" href="/spa/board?p=' + DATA.next + '">Next ›</a>';
+  h += '</div>';
+  document.getElementById('root').innerHTML = h;
+}, 50);
+
+</script></body></html>
