@@ -459,6 +459,10 @@ function renderDetail(st) {
   const prog = st.page_progress && st.page_progress.total ? Math.round(st.page_progress.done / st.page_progress.total * 100) : null;
   $("dStatus").innerHTML = `${pill(st.status)} ${st.platform ? esc(st.platform) : ""}
     <div style="margin-top:6px;font-size:15px">${st.running ? "⏳ " + esc(st.activity || "Working…") : esc(st.message || "")}</div>
+    ${!st.running && st.status === "blocked" && /robots\.txt/i.test(st.message || "") ? `<div class="banner warnb" style="margin-top:10px">
+      <b>This job stopped only because of the robots.txt setting.</b> If your use is allowed by the site's terms, click:
+      <div style="margin-top:8px"><button class="primary" data-act="ignore_robots" data-id="${st.id}">▶ Run anyway (ignore robots.txt)</button></div>
+      <div class="muted" style="font-size:12px;margin-top:6px">“Continue” would run it again with the same setting and stop again.</div></div>` : ""}
     ${st.running && prog != null ? `<div class="bar"><i style="width:${prog}%"></i></div><div class="muted" style="font-size:12px">${st.count_by_posts ? "This batch" : "This listing page"}: ${st.page_progress.done} of ${st.page_progress.total} ${st.count_by_posts ? "posts" : "threads"}</div>` : ""}`;
   const avg = st.avg_confidence == null ? "–" : Math.round(st.avg_confidence * 100) + "%";
   $("jobStats").innerHTML = (st.count_by_posts ? [
