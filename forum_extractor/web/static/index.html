@@ -594,7 +594,23 @@ $("btnBrowse").onclick = async () => {
   if (r.path) $("output_dir").value = r.path;
   else banner($("setupMsg"), "No folder picker available – type the folder path instead.", "info");
 };
+// remember the user's own choices for these settings on this computer
+const REMEMBER = ["rd_robots", "respect_robots", "rd_delay", "rd_posts_per_file", "rd_max_posts", "pages_per_file", "request_delay"];
+function restoreSettings() {
+  for (const id of REMEMBER) {
+    let v = null;
+    try { v = localStorage.getItem("fpe:" + id); } catch (e) {}
+    if (v === null) continue;
+    const el = $(id);
+    if (el.type === "checkbox") el.checked = v === "1"; else el.value = v;
+  }
+  for (const id of REMEMBER) $(id).addEventListener("change", () => {
+    const el = $(id);
+    try { localStorage.setItem("fpe:" + id, el.type === "checkbox" ? (el.checked ? "1" : "0") : el.value); } catch (e) {}
+  });
+}
 (async () => {
+  restoreSettings();
   const d = await api("/api/defaults");
   $("output_dir").value = d.config.output_dir;
   await loadJobs();
