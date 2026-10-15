@@ -153,3 +153,13 @@ def test_ignore_robots_button(client, fresh_server, tmp_path):
     assert st["config"]["respect_robots"] is False
     assert st["status"] != "blocked" or "robots" not in st["message"]
     assert any(e["event"] == "robots_ignored" for e in st["recent_events"])
+
+
+def test_reddit_preview(client, fresh_server, tmp_path):
+    c = cfg(fresh_server, "/rj/r/NoFap/new/", tmp_path, source="reddit")
+    res = client.post("/api/analyze", json={"config": c}).json()
+    an = res["analysis"]
+    assert an["platform"] == "reddit" and an["threads"]["count"] == 4  # image post and ad excluded
+    assert res["preview"]["ok"] and res["preview"]["text"].startswith("Welcome to the recovery forum")
+    pv = client.post("/api/test-thread", json={"config": c, "url": an["threads"]["items"][1]["url"]}).json()
+    assert pv["ok"] and pv["title"] == "Day 1: starting my journey"

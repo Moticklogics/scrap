@@ -127,6 +127,20 @@ class JobRunner:
                 headless=self.cfg.headless, timeout=self.cfg.page_timeout, max_retries=self.cfg.max_retries,
                 user_agent=self.cfg.user_agent, wait_for_network_idle=self.cfg.wait_for_network_idle,
                 request_delay=self.cfg.request_delay)
+        from . import reddit as rd
+        from .urls import is_reddit
+        self.reddit = rd.parse_target(self.cfg.start_url) if (
+            self.cfg.source == "reddit" or is_reddit(self.cfg.start_url)) else None
+        if self.reddit is not None:
+            if not self.cfg.posts_per_file or self.cfg.source != "reddit":
+                self.cfg.posts_per_file = self.cfg.posts_per_file or 500
+                self.cfg.source = "reddit"
+                if self.cfg.file_prefix == "Forum_Pages":
+                    self.cfg.file_prefix = "Reddit_Posts"
+                self.db.update_job(self.job_id, config=self.cfg.to_dict())
+            self.spec = get_platform("reddit")
+            self.db.update_job(self.job_id, platform="Reddit")
+            self.activity = f"Connecting to Reddit (r/{self.reddit.subreddit})…"
         try:
             if self.cfg.posts_per_file:
                 self.writer = PostCountWriter(self.db, self.job_id, self.cfg.output_dir, self.cfg.file_prefix,
@@ -134,13 +148,17 @@ class JobRunner:
             else:
                 self.writer = OutputWriter(self.db, self.job_id, self.cfg.output_dir, self.cfg.file_prefix,
                                            self.cfg.pages_per_file)
-            self._load_profile()
-            if mode == "retry_failed":
+            if self.reddit is None:
+                self._load_profile()
+            if mode == "retry_failed" and self.reddit is not None:
+                self._log("info", "retry", "Reddit posts are read from the feed; nothing to retry")
+                self._set_state("completed", "nothing to retry")
+            elif mode == "retry_failed":
                 await self._retry_failed()
                 final = "stopped" if self.stop_requested else "completed"
                 self._set_state(final, "retry pass finished")
             else:
-                finished = await self._crawl()
+                finished = await (self._crawl_reddit() if self.reddit is not None else self._crawl())
                 if self.stop_requested and not finished:
                     self._set_state("stopped", "stopped by user - resume to continue")
                 elif finished:
@@ -321,6 +339,100 @@ class JobRunner:
                 self._log("info", "end", f"last listing page reached ({method})")
                 return True
             url, seq, prev_number = next_url, seq + 1, number
+        return True
+
+    async def _crawl_reddit(self) -> bool:
+        """Read a subreddit as a feed of posts (100 per request); returns True at the natural end."""
+        from . import reddit as rd
+        t = self.reddit
+        ua = self.cfg.user_agent or rd.USER_AGENT
+        if t.post_id:  # a single post URL
+            self.activity = "Reading the post…"
+            data = await self.browser.fetch_json(rd.post_url(t), ua)
+            posts, _ = rd.parse_listing(data, t.base)
+            self.db.upsert_page(self.job_id, 0, self.cfg.start_url, 1, "processing", thread_count=len(posts))
+            for pos, p in enumerate(posts[:1]):
+                row = self.db.add_thread(self.job_id, 0, 1, self.cfg.start_url, pos, p.url, f"reddit|{p.id}", p.title)
+                if row["status"] == "pending":
+                    self._record(0, 1, row, Outcome("done", text=rd.record_text(p), confidence=1.0,
+                                                    method="reddit-json", title=p.title))
+            self.writer.page_done(0, 1)
+            self.db.upsert_page(self.job_id, 0, self.cfg.start_url, 1, "done", next_url=None, next_method="single post")
+            return True
+
+        url, seq, _prev = self._resume_point()
+        if seq == 0 or not url or ".json" not in url:
+            if seq == 0:
+                url = rd.listing_url(t)
+        if url is None:
+            return True
+        if seq > 0:
+            self._log("info", "resume", f"resuming the r/{t.subreddit} feed after {seq} batches")
+        while url:
+            if self.stop_requested:
+                return False
+            await self._wait_if_paused()
+            if self.stop_requested:
+                return False
+            if self._post_limit_reached():
+                self._log("info", "max_posts", f"reached the configured maximum of {self.cfg.max_posts} posts")
+                self.db.update_job(self.job_id, message=f"finished: {self.cfg.max_posts} posts saved")
+                return True
+            if self.cfg.respect_robots and not await self.browser.robots_allowed(url):
+                raise BlockedError(
+                    "Reddit's robots.txt asks automated tools not to read it. If your use is allowed by Reddit's "
+                    "terms, untick 'Respect Reddit's robots.txt' and press 'Start collecting' again, or press "
+                    "'Ignore robots.txt & run' on this job")
+            saved = self.db.thread_counts(self.job_id).get("done", 0)
+            self.activity = f"{saved} posts saved · downloading the next 100 posts of r/{t.subreddit}…"
+            self.current_page_url = url
+            self.db.update_job(self.job_id, current_page_url=url, current_page_number=seq + 1)
+            data = await self.browser.fetch_json(url, ua)
+            posts, after = rd.parse_listing(data, t.base)
+            if not posts:
+                self._log("info", "end", f"r/{t.subreddit}: no more posts (Reddit lists about 1,000 per list)")
+                self.db.upsert_page(self.job_id, seq, url, seq + 1, "done", thread_count=0, next_url=None)
+                return True
+            wanted = [p for p in posts if rd.wanted(p)]
+            skipped = len(posts) - len(wanted)
+            self.db.upsert_page(self.job_id, seq, url, seq + 1, "processing", thread_count=len(wanted))
+            self._log("info", "listing_page", f"downloaded {len(posts)} posts ({len(wanted)} text posts"
+                                              + (f", {skipped} image/link posts or ads skipped" if skipped else "") + ")")
+            self.page_total, self.page_done = len(wanted), 0
+            for pos, p in enumerate(wanted):
+                if self.stop_requested or self._post_limit_reached():
+                    break
+                key = f"reddit|{p.id}"
+                row = self.db.add_thread(self.job_id, seq, seq + 1, url, pos, p.url, key, p.title)
+                self.page_done += 1
+                if row["status"] != "pending":
+                    continue
+                if self.cfg.skip_duplicates and (self.db.key_done_in_job(self.job_id, key, row["id"])
+                                                 or self.db.key_done_elsewhere(self.job_id, key)):
+                    self._record(seq, seq + 1, row, Outcome("duplicate", error="post already saved"))
+                    continue
+                async with self._write_lock:
+                    self._record(seq, seq + 1, row, Outcome("done", text=rd.record_text(p), confidence=1.0,
+                                                            method="reddit-json", title=p.title))
+                saved = self.db.thread_counts(self.job_id).get("done", 0)
+                lim = f" of {self.cfg.max_posts}" if self.cfg.max_posts else ""
+                self.activity = f"{saved}{lim} posts saved · {p.title[:80]}"
+            if self.stop_requested:
+                return False
+            next_url = rd.listing_url(t, after) if after else None
+            self.writer.page_done(seq, seq + 1)
+            self.db.upsert_page(self.job_id, seq, url, seq + 1, "done", next_url=next_url, next_method="reddit cursor")
+            self.db.update_job(self.job_id, current_output_file=self.writer.current_file())
+            if self._post_limit_reached():
+                self._log("info", "max_posts", f"reached the configured maximum of {self.cfg.max_posts} posts")
+                self.db.update_job(self.job_id, message=f"finished: {self.cfg.max_posts} posts saved")
+                return True
+            if not next_url:
+                self._log("info", "end", f"reached the end of r/{t.subreddit}'s list "
+                                         "(Reddit shows about 1,000 posts per list)")
+                self.db.update_job(self.job_id, message="finished: end of the Reddit list reached")
+                return True
+            url, seq = next_url, seq + 1
         return True
 
     def _last_next_inferred(self, seq: int) -> bool:

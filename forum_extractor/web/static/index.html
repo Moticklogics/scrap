@@ -280,7 +280,8 @@ function config() {
     ai_classifier: $("ai_classifier").value, on_unknown_pagination: "ask"};
   if (activeTab === "reddit") return {...common, start_url: redditUrl(), max_pages: null,
     max_posts: n("rd_max_posts"), posts_per_file: n("rd_posts_per_file") || 500, pages_per_file: 1100,
-    request_delay: n("rd_delay") ?? 2, respect_robots: $("rd_robots").checked, file_prefix: "Reddit_Posts"};
+    request_delay: n("rd_delay") ?? 2, respect_robots: $("rd_robots").checked, file_prefix: "Reddit_Posts",
+    source: "reddit"};
   return {...common, start_url: $("url").value.trim(), max_pages: n("max_pages"), pages_per_file: n("pages_per_file") || 10,
     max_posts: null, posts_per_file: null, request_delay: n("request_delay") ?? 1,
     respect_robots: $("respect_robots").checked, file_prefix: $("file_prefix").value.trim() || "Forum_Pages"};
@@ -331,17 +332,22 @@ function renderAnalysis(res) {
   const a = res.analysis;
   $("previewCard").classList.remove("hidden");
   const pt = {listing: "List of threads", thread: "Single thread", blocked: "Blocked", other: "Unknown page"}[a.page_type] || a.page_type;
-  $("detStats").innerHTML = [
+  const isRd = a.platform === "reddit";
+  $("detStats").innerHTML = isRd ? [
+    ["Source", "Reddit"], ["Subreddit", esc(a.title)], ["Text posts in first 100", `${a.threads.count}`],
+    ["More posts available", a.pagination.next_url ? "yes" : "no"],
+  ].map(([k, v]) => `<div class="stat"><span>${k}</span><b style="font-size:15px">${v}</b></div>`).join("") : [
     ["Page type", `${esc(pt)}`], ["Site", `${esc(a.platform_label)}`],
     ["Page number", a.page_number ?? "–"], ["Threads on page", `${a.threads.count}`],
   ].map(([k, v]) => `<div class="stat"><span>${k}</span><b style="font-size:15px">${v}</b></div>`).join("");
+  $("profileBox").classList.toggle("hidden", isRd);
   $("threadCount").textContent = `(${a.threads.count})`;
   $("threadTable").querySelector("tbody").innerHTML = a.threads.items.slice(0, 100).map((t, i) =>
     `<tr><td class="nowrap muted">${i + 1}</td><td><a href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.title)}</a></td>
      <td class="nowrap"><button class="small" data-test="${esc(t.url)}" data-title="${esc(t.title)}">Preview</button></td></tr>`).join("") ||
     `<tr><td class="bad">No threads detected. Open "Advanced: site selectors" to set them.</td></tr>`;
   const pg = a.pagination;
-  $("nextInfo").innerHTML = pg.next_url
+  $("nextInfo").innerHTML = isRd ? (pg.next_url ? "The job keeps loading 100 posts at a time until your post limit (or the end of Reddit's list)." : "This list has no more posts.") : pg.next_url
     ? `<a href="${esc(pg.next_url)}" target="_blank" rel="noopener">${esc(pg.next_url)}</a> ${badge(pg.confidence)}`
     : pg.is_last ? `<span class="ok">This is the last page.</span>` : `<span class="warn">No next page found – the job will ask you.</span>`;
   $("pageCandidates").innerHTML = (pg.needs_confirmation && pg.candidates.length)

@@ -315,3 +315,47 @@ def test_reddit_all_posts_one_file(env):
     assert m.status(job)["status"] == "completed"
     assert [p.name for p in env.out.iterdir()] == ["Reddit_Posts_00001-00011.txt"]
     assert len(parse_post_records(env.out)) == 11
+
+
+def test_reddit_feed_full(env):
+    async def go():
+        return await env.run(env.cfg("/rj/r/NoFap/new/", source="reddit", posts_per_file=500,
+                                     file_prefix="Reddit_Posts", request_delay=0))
+    m, job = asyncio.run(go())
+    st = m.status(job)
+    assert st["status"] == "completed", st
+    assert st["threads_completed"] == 11 and st["threads_duplicate"] == 2
+    assert [p.name for p in env.out.iterdir()] == ["Reddit_Posts_00001-00011.txt"]
+    recs = parse_post_records(env.out)
+    assert [r["n"] for r in recs] == list(range(1, 12))
+    by_title = {r["title"]: r for r in recs}
+    assert by_title["Day 1: starting my journey"]["text"] == expected_text(BY_ID[2])
+    assert by_title["Relapsed after 30 days - what now?"]["text"] == expected_text(BY_ID[3])
+    from forum_extractor.platforms import EMPTY_BODY_TEXT
+    assert by_title["Is cold turkey better than tapering?"]["text"] == EMPTY_BODY_TEXT
+    assert not any("progress chart" in t or "premium habit" in t for t in by_title)
+    # only 3 feed requests were needed for 11 posts (no post pages opened)
+    assert sum(v for k, v in env.server.hits.items() if k.startswith("/rj/")) == 3
+
+
+def test_reddit_feed_post_limit_and_rotation(env):
+    async def go():
+        return await env.run(env.cfg("/rj/r/NoFap/new/", source="reddit", posts_per_file=2, max_posts=5,
+                                     file_prefix="Reddit_Posts", request_delay=0))
+    m, job = asyncio.run(go())
+    st = m.status(job)
+    assert st["status"] == "completed" and st["threads_completed"] == 5
+    assert sorted(p.name for p in env.out.iterdir()) == [
+        "Reddit_Posts_00001-00002.txt", "Reddit_Posts_00003-00004.txt", "Reddit_Posts_00005-00005.txt"]
+
+
+def test_reddit_feed_single_post_and_block(env):
+    async def go():
+        m1, j1 = await env.run(env.cfg("/rj/r/NoFap/comments/r9/poem/", source="reddit", request_delay=0))
+        m2, j2 = await env.run(env.cfg("/rj/r/Blocked/new/", source="reddit", request_delay=0, max_retries=0))
+        return m1.status(j1), m2.status(j2)
+    s1, s2 = asyncio.run(go())
+    assert s1["status"] == "completed" and s1["threads_completed"] == 1
+    recs = parse_post_records(env.out)
+    assert len(recs) == 1 and recs[0]["text"] == expected_text(BY_ID[9])
+    assert s2["status"] == "blocked" and "network security" in s2["message"]

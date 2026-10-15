@@ -5,6 +5,7 @@ import asyncio
 import logging
 import os
 import random
+import re
 import time
 from dataclasses import dataclass
 from urllib import robotparser
@@ -203,6 +204,60 @@ class BrowserManager:
                         await page.close()
                     except Exception:
                         pass
+        raise FetchError(f"{url}: {last_err} (after {self.max_retries + 1} attempts)")
+
+    async def fetch_json(self, url: str, user_agent: str = ""):
+        """GET a JSON document (no page rendering). Retries 429/5xx and network errors with backoff."""
+        import json as _json
+        await self.start()
+        headers = {"Accept": "application/json"}
+        if user_agent:
+            headers["User-Agent"] = user_agent
+        attempt = 0
+        last_err = ""
+        while attempt <= self.max_retries:
+            attempt += 1
+            await self.limiter.wait()
+            try:
+                resp = await self._context.request.get(url, headers=headers, timeout=self.timeout * 1000,
+                                                       max_redirects=5)
+                status = resp.status
+                body = await resp.text()
+            except Exception as exc:
+                last_err = str(exc).splitlines()[0][:300]
+                log.warning("json fetch failed (%s/%s) %s: %s", attempt, self.max_retries + 1, url, last_err)
+                await self._backoff(attempt)
+                continue
+            if status == 429 or status >= 500:
+                wait = 0.0
+                try:
+                    h = resp.headers
+                    wait = float(h.get("retry-after") or h.get("x-ratelimit-reset") or 0)
+                except (TypeError, ValueError):
+                    wait = 0.0
+                last_err = f"HTTP {status}" + (" (rate limited)" if status == 429 else "")
+                await self._backoff(attempt, minimum=min(max(wait, 10.0 if status == 429 else 0.0), 120.0))
+                continue
+            if status in (401, 403):
+                reason = ""
+                try:
+                    reason = (_json.loads(body) or {}).get("reason") or ""
+                except ValueError:
+                    pass
+                if re.search(r"blocked by network security|whoa there", body, re.I):
+                    raise BlockedError("Reddit blocked this connection (network security). Wait a while, use a "
+                                       "longer delay, and try again")
+                raise BlockedError(f"access denied (HTTP {status}{', ' + reason if reason else ''})")
+            if status == 404:
+                raise FetchError(f"{url}: not found (HTTP 404) - check the name; private or banned communities "
+                                 "cannot be read")
+            try:
+                return _json.loads(body)
+            except ValueError:
+                if re.search(r"blocked by network security|whoa there|captcha", body, re.I):
+                    raise BlockedError("Reddit returned a block/CAPTCHA page instead of data")
+                last_err = f"HTTP {status}: response was not JSON"
+                await self._backoff(attempt)
         raise FetchError(f"{url}: {last_err} (after {self.max_retries + 1} attempts)")
 
     async def _backoff(self, attempt: int, minimum: float = 0.0) -> None:

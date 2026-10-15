@@ -57,6 +57,7 @@ class JobConfig:
     output_dir: str = "output"
     max_pages: int | None = None  # None = until the last page
     max_posts: int | None = None  # stop after this many saved posts (used for Reddit)
+    source: str = "auto"  # "auto" (detect) or "reddit" (Reddit JSON feed)
     posts_per_file: int | None = None  # rotate output by number of posts instead of listing pages (Reddit)
     pages_per_file: int = 1100
     request_delay: float = 1.0  # seconds between request starts (global)

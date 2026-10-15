@@ -315,6 +315,66 @@
  "/reddit/r/NoFap/comments/r9/poem_for_anyone_struggling/": {
   "file": "reddit/thread_9.html"
  },
+ "/rj/r/Blocked/new.json?limit=100&raw_json=1": {
+  "file": "reddit_json/blocked.html",
+  "status": 403
+ },
+ "/rj/r/NoFap/comments/r1.json?raw_json=1&limit=1": {
+  "content_type": "application/json",
+  "file": "reddit_json/post_1.json"
+ },
+ "/rj/r/NoFap/comments/r10.json?raw_json=1&limit=1": {
+  "content_type": "application/json",
+  "file": "reddit_json/post_10.json"
+ },
+ "/rj/r/NoFap/comments/r2.json?raw_json=1&limit=1": {
+  "content_type": "application/json",
+  "file": "reddit_json/post_2.json"
+ },
+ "/rj/r/NoFap/comments/r3.json?raw_json=1&limit=1": {
+  "content_type": "application/json",
+  "file": "reddit_json/post_3.json"
+ },
+ "/rj/r/NoFap/comments/r4.json?raw_json=1&limit=1": {
+  "content_type": "application/json",
+  "file": "reddit_json/post_4.json"
+ },
+ "/rj/r/NoFap/comments/r5.json?raw_json=1&limit=1": {
+  "content_type": "application/json",
+  "file": "reddit_json/post_5.json"
+ },
+ "/rj/r/NoFap/comments/r6.json?raw_json=1&limit=1": {
+  "content_type": "application/json",
+  "file": "reddit_json/post_6.json"
+ },
+ "/rj/r/NoFap/comments/r7.json?raw_json=1&limit=1": {
+  "content_type": "application/json",
+  "file": "reddit_json/post_7.json"
+ },
+ "/rj/r/NoFap/comments/r77.json?raw_json=1&limit=1": {
+  "content_type": "application/json",
+  "file": "reddit_json/post_77.json"
+ },
+ "/rj/r/NoFap/comments/r8.json?raw_json=1&limit=1": {
+  "content_type": "application/json",
+  "file": "reddit_json/post_8.json"
+ },
+ "/rj/r/NoFap/comments/r9.json?raw_json=1&limit=1": {
+  "content_type": "application/json",
+  "file": "reddit_json/post_9.json"
+ },
+ "/rj/r/NoFap/new.json?limit=100&raw_json=1": {
+  "content_type": "application/json",
+  "file": "reddit_json/new_p1.json"
+ },
+ "/rj/r/NoFap/new.json?limit=100&raw_json=1&after=t3_r4": {
+  "content_type": "application/json",
+  "file": "reddit_json/new_p2.json"
+ },
+ "/rj/r/NoFap/new.json?limit=100&raw_json=1&after=t3_r7": {
+  "content_type": "application/json",
+  "file": "reddit_json/new_p3.json"
+ },
  "/robots.txt": {
   "content_type": "text/plain",
   "file": "misc/robots.txt"

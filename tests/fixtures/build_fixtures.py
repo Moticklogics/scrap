@@ -1072,6 +1072,48 @@ def reddit():
         add(tl(t), f"reddit/thread_{t['id']}.html", shell("comments-page", t["title"], content))
 
 
+def reddit_json():
+    """Reddit's public JSON listing format (what the app really uses for Reddit)."""
+    from urllib.parse import urlencode
+    base = "/rj/r/NoFap"
+
+    def child(t, is_self=True, promoted=False, body=None):
+        html_body = body if body is not None else body_html(t, "p", lambda a, x: f"<blockquote>{x}</blockquote>")
+        return {"kind": "t3", "data": {
+            "id": f"r{t['id']}", "name": f"t3_r{t['id']}", "title": t["title"], "author": t["author"],
+            "is_self": is_self, "promoted": promoted, "stickied": t.get("sticky", False),
+            "permalink": f"/r/NoFap/comments/r{t['id']}/{t['slug'].replace('-', '_')}/",
+            "url": f"https://www.reddit.com/r/NoFap/comments/r{t['id']}/" if is_self else "https://i.redd.it/abc.jpg",
+            "selftext": "markdown source" if html_body else "", "selftext_html":
+                (f"<!-- SC_OFF --><div class=\"md\">{html_body}</div><!-- SC_ON -->" if html_body else None),
+            "num_comments": len(t.get("replies", []))}}
+
+    image = {"id": 88, "title": "Look at my 90 day progress chart", "slug": "chart", "author": "Img", "replies": []}
+    ad = {"id": 99, "title": "Download our premium habit app today", "slug": "ad", "author": "Ads", "replies": []}
+    for p, ids in PAGES.items():
+        kids = [child(BY_ID[i]) for i in ids]
+        kids.insert(1, child(image, is_self=False, body=""))
+        kids.insert(2, child(ad, promoted=True, body="<p>Buy now</p>"))
+        if p == 2:
+            kids.append(child(REDDIT_TITLE_ONLY, body=""))
+        after = f"t3_r{ids[-1]}" if p < LAST_PAGE else None
+        params = [("limit", "100"), ("raw_json", "1")]
+        if p > 1:
+            params.append(("after", f"t3_r{PAGES[p - 1][-1]}"))
+        doc = {"kind": "Listing", "data": {"after": after, "dist": len(kids), "children": kids}}
+        add(f"{base}/new.json?{urlencode(params)}", f"reddit_json/new_p{p}.json", json.dumps(doc),
+            content_type="application/json")
+    for t in list(THREADS) + [REDDIT_TITLE_ONLY]:
+        doc = [{"kind": "Listing", "data": {"after": None, "children": [child(t, body=None if t.get("blocks") else "")]}},
+               {"kind": "Listing", "data": {"children": []}}]
+        add(f"{base}/comments/r{t['id']}.json?raw_json=1&limit=1", f"reddit_json/post_{t['id']}.json", json.dumps(doc),
+            content_type="application/json")
+    # a subreddit that blocks us
+    add("/rj/r/Blocked/new.json?limit=100&raw_json=1", "reddit_json/blocked.html",
+        "<html><body><h1>whoa there, pardner!</h1><p>Your request has been blocked by network security.</p></body></html>",
+        status=403)
+
+
 def ambiguous():
     """A listing whose only pagination is an unlabeled 'More topics' link: the job must ask the user."""
     def page(ids, more):
@@ -1091,7 +1133,7 @@ def build() -> None:
         shutil.rmtree(ROOT)
     ROOT.mkdir(parents=True)
     ROUTES.clear()
-    for fn in (xf2, xf1, phpbb, vbulletin, discourse, nodebb, flarum, vanilla, oldboard, community, spa, misc, ambiguous, reddit):
+    for fn in (xf2, xf1, phpbb, vbulletin, discourse, nodebb, flarum, vanilla, oldboard, community, spa, misc, ambiguous, reddit, reddit_json):
         fn()
     (ROOT / "routes.json").write_text(json.dumps(ROUTES, indent=1, sort_keys=True), encoding="utf-8")
 

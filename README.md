@@ -74,7 +74,9 @@ Reddit is one endlessly scrolling list, so Reddit jobs are counted in **posts**,
 * files are named by post number: `Reddit_Posts_00001-00500.txt`, `Reddit_Posts_00501-01000.txt`, …
 * the job stops once **How many posts** have been saved
 
-Behind the scenes the posts are read through `old.reddit.com`, 100 posts per request.
+Behind the scenes the app reads Reddit's public data feed (the `.json` version of the subreddit list):
+one request returns 100 posts with their full title and text, so 1,000 posts need only about 10 requests and no
+post pages are opened.
 
 Things to know:
 * Reddit shows at most about 1,000 posts per list. To reach other posts, run another list (Hot, Top – all time…).
