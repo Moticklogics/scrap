@@ -211,7 +211,9 @@ class JobRunner:
                 self._log("warn", "out_of_scope", f"next page {url} is outside the forum scope; stopping")
                 return True
             if self.cfg.respect_robots and not await self.browser.robots_allowed(url):
-                raise BlockedError(f"robots.txt disallows {url}")
+                raise BlockedError(
+                    f"this site's robots.txt asks automated tools not to read {url}. If your use is allowed by the "
+                    "site's terms, untick 'Respect robots.txt' in Settings and press 'Start collecting' again")
 
             self.current_page_url = url
             self.page_total = self.page_done = 0
