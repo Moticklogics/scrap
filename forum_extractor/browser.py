@@ -126,6 +126,13 @@ class BrowserManager:
         else:
             await route.continue_()
 
+    async def new_page(self):
+        """A page kept open by the caller (used for infinite-scroll pages). The caller must close it."""
+        await self.start()
+        if self._browser is None or not self._browser.is_connected():
+            await self._restart()
+        return await self._context.new_page()
+
     async def close(self) -> None:
         for obj in (self._context, self._browser):
             try:

@@ -215,3 +215,85 @@ class RedditClient:
     async def check(self) -> None:
         """Log in with the saved key (raises RedditAuthError when it is wrong)."""
         await self._auth_headers()
+
+
+# --------------------------------------------------------------------------- scrolling the subreddit page
+# Without an API key the subreddit page itself is opened in the browser and scrolled like a person would:
+# each post's title and text are copied from the page (no post pages are opened). Reddit sometimes shows
+# only the first lines of very long posts in the scrolling list; whatever the page shows is saved.
+
+EXTRACT_JS = """
+() => {
+  const out = [];
+  for (const p of document.querySelectorAll('shreddit-post')) {
+    const tb = p.querySelector('[slot="text-body"]');
+    const titleEl = p.querySelector('[slot="title"]');
+    out.push({
+      id: p.getAttribute('id') || p.getAttribute('thingid') || p.getAttribute('post-id') || '',
+      title: p.getAttribute('post-title') || (titleEl ? titleEl.innerText : ''),
+      permalink: p.getAttribute('permalink') || '',
+      type: (p.getAttribute('post-type') || '').toLowerCase(),
+      promoted: p.hasAttribute('is-promoted') || p.getAttribute('promoted') === 'true',
+      author: p.getAttribute('author') || '',
+      html: tb ? tb.innerHTML : ''
+    });
+  }
+  return out;
+}
+"""
+BLOCK_RX = re.compile(r"blocked by network security|whoa there, pardner|You've been blocked|"
+                      r"Your request has been blocked", re.I)
+
+
+def page_url(t: RedditTarget) -> str:
+    if t.post_id:
+        return f"{t.base}/r/{t.subreddit}/comments/{t.post_id}/"
+    url = f"{t.base}/r/{t.subreddit}/{t.sort}/"
+    if t.t and t.sort in ("top", "controversial"):
+        url += f"?t={t.t}"
+    return url
+
+
+def _page_post(d: dict, base: str) -> RedditPost:
+    html = d.get("html") or ""
+    text = ""
+    if html.strip():
+        soup = soup_from_html(f"<div>{html}</div>")
+        text = html_to_text(soup.div)
+    permalink = d.get("permalink") or ""
+    kind = d.get("type") or ""
+    return RedditPost(
+        id=(d.get("id") or permalink).replace("t3_", ""), title=(d.get("title") or "").strip(),
+        url=(base + permalink) if permalink.startswith("/") else permalink, text=text,
+        is_self=kind in ("text", "self", ""), promoted=bool(d.get("promoted")), stickied=False,
+        author=d.get("author") or "")
+
+
+async def open_feed(page, url: str, timeout_ms: float) -> None:
+    from .browser import BlockedError, FetchError
+    try:
+        resp = await page.goto(url, wait_until="domcontentloaded", timeout=timeout_ms)
+    except Exception as exc:
+        raise FetchError(f"{url}: {str(exc).splitlines()[0][:200]}") from exc
+    try:
+        await page.wait_for_selector("shreddit-post", timeout=min(timeout_ms, 20000))
+    except Exception:
+        pass
+    html = await page.content()
+    if BLOCK_RX.search(html):
+        raise BlockedError("Reddit blocked this connection (network security)")
+    if resp is not None and resp.status == 404:
+        raise FetchError(f"{url}: not found - check the subreddit name (private or banned communities can't be read)")
+
+
+async def read_page_posts(page, base: str) -> list[RedditPost]:
+    data = await page.evaluate(EXTRACT_JS)
+    return [_page_post(d, base) for d in data if d.get("id") or d.get("permalink")]
+
+
+async def scroll_down(page) -> None:
+    await page.evaluate("() => window.scrollTo(0, document.body.scrollHeight)")
+    try:
+        await page.wait_for_load_state("networkidle", timeout=5000)
+    except Exception:
+        pass

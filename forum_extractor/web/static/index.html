@@ -128,11 +128,12 @@ a{color:var(--accent)}
     <div class="banner info" style="font-size:13px">
       Reddit is one endlessly scrolling list, so it's counted in <b>posts</b>: each post's <b>title and question</b> is saved
       (comments, image/link posts and ads are skipped). Files are named by post number, e.g. <code>Reddit_Posts_00001-00500.txt</code>.
-      Reddit shows at most about 1,000 posts per list – choose another list (Hot / Top) to reach different posts.
+      The app opens the subreddit page and keeps <b>scrolling down</b>, copying each post from the page (posts are not opened one by one;
+      very long posts may be shortened by Reddit in the list). Reddit shows at most about 1,000 posts per list – choose another list (Hot / Top) to reach different posts.
     </div>
     <div class="apibox">
       <div class="row" style="align-items:center;justify-content:space-between">
-        <div><b>Reddit API access</b> <span class="muted">– recommended; fixes "blocked by network security"</span></div>
+        <div><b>Reddit API access</b> <span class="muted">– optional; only if you have a Reddit API key</span></div>
         <div id="rdApiStatus" class="muted">checking…</div>
       </div>
       <details id="rdApiForm">
@@ -361,8 +362,8 @@ function renderAnalysis(res) {
   const pt = {listing: "List of threads", thread: "Single thread", blocked: "Blocked", other: "Unknown page"}[a.page_type] || a.page_type;
   const isRd = a.platform === "reddit";
   $("detStats").innerHTML = isRd ? [
-    ["Source", "Reddit"], ["Subreddit", esc(a.title)], ["Text posts in first 100", `${a.threads.count}`],
-    ["More posts available", a.pagination.next_url ? "yes" : "no"],
+    ["Source", "Reddit"], ["Subreddit", esc(a.title)], ["Text posts loaded", `${a.threads.count}`],
+    ["Method", esc(a.pagination.method)],
   ].map(([k, v]) => `<div class="stat"><span>${k}</span><b style="font-size:15px">${v}</b></div>`).join("") : [
     ["Page type", `${esc(pt)}`], ["Site", `${esc(a.platform_label)}`],
     ["Page number", a.page_number ?? "–"], ["Threads on page", `${a.threads.count}`],
@@ -374,7 +375,7 @@ function renderAnalysis(res) {
      <td class="nowrap"><button class="small" data-test="${esc(t.url)}" data-title="${esc(t.title)}">Preview</button></td></tr>`).join("") ||
     `<tr><td class="bad">No threads detected. Open "Advanced: site selectors" to set them.</td></tr>`;
   const pg = a.pagination;
-  $("nextInfo").innerHTML = isRd ? (pg.next_url ? "The job keeps loading 100 posts at a time until your post limit (or the end of Reddit's list)." : "This list has no more posts.") : pg.next_url
+  $("nextInfo").innerHTML = isRd ? "The job keeps scrolling and saving posts until your post limit or the end of Reddit's list." : pg.next_url
     ? `<a href="${esc(pg.next_url)}" target="_blank" rel="noopener">${esc(pg.next_url)}</a> ${badge(pg.confidence)}`
     : pg.is_last ? `<span class="ok">This is the last page.</span>` : `<span class="warn">No next page found – the job will ask you.</span>`;
   $("pageCandidates").innerHTML = (pg.needs_confirmation && pg.candidates.length)
@@ -565,8 +566,7 @@ async function loadRedditKey() {
     const r = await api("/api/reddit-credentials");
     $("rdApiStatus").innerHTML = r.configured
       ? `<span class="ok">✔ Connected</span> <span class="muted">(client ID ${esc(r.client_id.slice(0, 6))}…)</span>`
-      : `<span class="warn">Not set up</span> <span class="muted">– anonymous access is often blocked by Reddit</span>`;
-    if (!r.configured) $("rdApiForm").open = true;
+      : `<span class="muted">Not set up – the page will be scrolled instead</span>`;
     if (r.configured) { $("rd_cid").value = r.client_id; $("rd_user").value = r.username || ""; }
   } catch (e) {}
 }

@@ -319,12 +319,12 @@ def test_reddit_all_posts_one_file(env):
 
 def test_reddit_feed_full(env):
     async def go():
-        return await env.run(env.cfg("/rj/r/NoFap/new/", source="reddit", posts_per_file=500,
-                                     file_prefix="Reddit_Posts", request_delay=0))
+        return await env.run(env.cfg("/rs/r/NoFap/new/", source="reddit", posts_per_file=500,
+                                     file_prefix="Reddit_Posts", request_delay=0.2))
     m, job = asyncio.run(go())
     st = m.status(job)
     assert st["status"] == "completed", st
-    assert st["threads_completed"] == 11 and st["threads_duplicate"] == 2
+    assert st["threads_completed"] == 11 and st["threads_duplicate"] == 0  # repeats on one page are ignored
     assert [p.name for p in env.out.iterdir()] == ["Reddit_Posts_00001-00011.txt"]
     recs = parse_post_records(env.out)
     assert [r["n"] for r in recs] == list(range(1, 12))
@@ -334,14 +334,15 @@ def test_reddit_feed_full(env):
     from forum_extractor.platforms import EMPTY_BODY_TEXT
     assert by_title["Is cold turkey better than tapering?"]["text"] == EMPTY_BODY_TEXT
     assert not any("progress chart" in t or "premium habit" in t for t in by_title)
-    # only 3 feed requests were needed for 11 posts (no post pages opened)
-    assert sum(v for k, v in env.server.hits.items() if k.startswith("/rj/")) == 3
+    # the subreddit page was opened once and scrolled; no post pages were opened
+    assert env.server.hits.get("/rs/r/NoFap/new/") == 1
+    assert not any("/comments/" in k for k in env.server.hits)
 
 
 def test_reddit_feed_post_limit_and_rotation(env):
     async def go():
-        return await env.run(env.cfg("/rj/r/NoFap/new/", source="reddit", posts_per_file=2, max_posts=5,
-                                     file_prefix="Reddit_Posts", request_delay=0))
+        return await env.run(env.cfg("/rs/r/NoFap/new/", source="reddit", posts_per_file=2, max_posts=5,
+                                     file_prefix="Reddit_Posts", request_delay=0.2))
     m, job = asyncio.run(go())
     st = m.status(job)
     assert st["status"] == "completed" and st["threads_completed"] == 5
@@ -351,8 +352,8 @@ def test_reddit_feed_post_limit_and_rotation(env):
 
 def test_reddit_feed_single_post_and_block(env):
     async def go():
-        m1, j1 = await env.run(env.cfg("/rj/r/NoFap/comments/r9/poem/", source="reddit", request_delay=0))
-        m2, j2 = await env.run(env.cfg("/rj/r/Blocked/new/", source="reddit", request_delay=0, max_retries=0))
+        m1, j1 = await env.run(env.cfg("/rs/r/NoFap/comments/r9/poem/", source="reddit", request_delay=0))
+        m2, j2 = await env.run(env.cfg("/rs/r/Blocked/new/", source="reddit", request_delay=0, max_retries=0))
         return m1.status(j1), m2.status(j2)
     s1, s2 = asyncio.run(go())
     assert s1["status"] == "completed" and s1["threads_completed"] == 1
@@ -386,12 +387,3 @@ def test_reddit_wrong_api_key(env):
     m, job = asyncio.run(go())
     st = m.status(job)
     assert st["status"] == "blocked" and "did not accept the API key" in st["message"]
-
-
-def test_reddit_public_block_suggests_api_key(env):
-    async def go():
-        return await env.run(env.cfg("/rj/r/Blocked/new/", source="reddit", request_delay=0, max_retries=0,
-                                     respect_robots=False))
-    m, job = asyncio.run(go())
-    st = m.status(job)
-    assert st["status"] == "blocked" and "API key" in st["message"]

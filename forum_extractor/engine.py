@@ -353,6 +353,8 @@ class JobRunner:
             except rd.RedditAuthError as exc:
                 raise BlockedError(str(exc)) from exc
             self._log("info", "platform", "using the official Reddit API with your app key")
+        if not client.api_mode:
+            return await self._crawl_reddit_page(t)
         if t.post_id:  # a single post URL
             self.activity = "Reading the post…"
             data = await client.get(client.post_url())
@@ -447,6 +449,94 @@ class JobRunner:
                 self.db.update_job(self.job_id, message="finished: end of the Reddit list reached")
                 return True
             url, seq = next_url, seq + 1
+        return True
+
+    async def _crawl_reddit_page(self, t) -> bool:
+        """No API key: open the subreddit page, keep scrolling down and copy each post from the page."""
+        from . import reddit as rd
+        url = rd.page_url(t)
+        if self.cfg.respect_robots and not await self.browser.robots_allowed(url):
+            raise BlockedError(
+                "Reddit's robots.txt asks automated tools not to read it. If your use is allowed by Reddit's "
+                "terms, untick 'Respect Reddit's robots.txt' and press 'Start collecting' again, or press "
+                "'Ignore robots.txt & run' on this job")
+        self.activity = f"Opening r/{t.subreddit} in the browser…"
+        self.db.update_job(self.job_id, current_page_url=url, current_page_number=1)
+        page = await self.browser.new_page()
+        try:
+            await self.browser.limiter.wait()
+            await rd.open_feed(page, url, self.cfg.page_timeout * 1000)
+            self.db.upsert_page(self.job_id, 0, url, 1, "processing")
+            seen: set[str] = set()
+            idle_rounds, scrolls, pos = 0, 0, 0
+            while True:
+                if self.stop_requested:
+                    return False
+                await self._wait_if_paused()
+                if self.stop_requested:
+                    return False
+                posts = await rd.read_page_posts(page, t.base)
+                new = [p for p in posts if p.id and p.id not in seen]
+                for p in new:
+                    seen.add(p.id)
+                if t.post_id:
+                    new = new[:1]
+                wanted = [p for p in new if rd.wanted(p)]
+                if new:
+                    idle_rounds = 0
+                    skipped = len(new) - len(wanted)
+                    self._log("info", "listing_page", f"scroll {scrolls + 1}: {len(new)} new posts on the page"
+                                                      + (f" ({skipped} image/link posts or ads skipped)" if skipped else ""))
+                else:
+                    idle_rounds += 1
+                for p in wanted:
+                    if self.stop_requested or self._post_limit_reached():
+                        break
+                    key = f"reddit|{p.id}"
+                    row = self.db.add_thread(self.job_id, 0, 1, url, pos, p.url, key, p.title)
+                    pos += 1
+                    if row["status"] != "pending":
+                        continue  # saved in an earlier run of this job
+                    if self.cfg.skip_duplicates and (self.db.key_done_in_job(self.job_id, key, row["id"])
+                                                     or self.db.key_done_elsewhere(self.job_id, key)):
+                        self._record(0, 1, row, Outcome("duplicate", error="post already saved"))
+                        continue
+                    async with self._write_lock:
+                        self._record(0, 1, row, Outcome("done", text=rd.record_text(p), confidence=1.0,
+                                                        method="reddit-page", title=p.title))
+                self.writer.sync()
+                saved = self.db.thread_counts(self.job_id).get("done", 0)
+                lim = f" of {self.cfg.max_posts}" if self.cfg.max_posts else ""
+                self.activity = f"{saved}{lim} posts saved · scrolling r/{t.subreddit} ({len(seen)} posts seen)"
+                self.db.update_job(self.job_id, current_output_file=self.writer.current_file())
+                if t.post_id:
+                    break
+                if self._post_limit_reached():
+                    self._log("info", "max_posts", f"reached the configured maximum of {self.cfg.max_posts} posts")
+                    self.db.update_job(self.job_id, message=f"finished: {self.cfg.max_posts} posts saved")
+                    break
+                if idle_rounds >= 4:
+                    if not seen:
+                        raise ValueError("No posts were found on the Reddit page. Reddit may be showing a login, "
+                                         "age or consent screen - check the subreddit in your normal browser.")
+                    self._log("info", "end", f"Reddit stopped loading new posts after {len(seen)} posts "
+                                             "(end of the list - Reddit shows about 1,000 per list)")
+                    self.db.update_job(self.job_id, message=f"finished: end of the Reddit list ({len(seen)} posts seen)")
+                    break
+                await self.browser.limiter.wait()
+                await rd.scroll_down(page)
+                html = await page.content()
+                if rd.BLOCK_RX.search(html[:200000]):
+                    raise BlockedError("Reddit blocked this connection (network security) while scrolling. "
+                                       "Saved posts are kept; wait a while and press Continue")
+                scrolls += 1
+        finally:
+            try:
+                await page.close()
+            except Exception:
+                pass
+        self.writer.page_done(0, 1)
+        self.db.upsert_page(self.job_id, 0, url, 1, "done", next_url=None, next_method="reddit page scroll")
         return True
 
     def _last_next_inferred(self, seq: int) -> bool:

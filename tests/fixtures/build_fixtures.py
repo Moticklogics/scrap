@@ -1126,6 +1126,59 @@ def reddit_json():
         status=403)
 
 
+def reddit_scroll():
+    """New-Reddit style subreddit page (shreddit-post elements) that loads more posts as you scroll."""
+    def post_html(t, kind="text", promoted=False, body=None):
+        b = body if body is not None else body_html(t, "p", lambda a, x: f"<blockquote>{x}</blockquote>")
+        tb = (f'<div slot="text-body"><div class="md feed-card-text-preview text-14"><div id="t3_r{t["id"]}-post-rtjson-content">'
+              f'{b}</div></div></div>') if b else ""
+        return (f'<article class="w-full m-0" aria-label="{esc(t["title"])}"><shreddit-post id="t3_r{t["id"]}" '
+                f'permalink="/r/NoFap/comments/r{t["id"]}/{t["slug"].replace("-", "_")}/" post-title="{esc(t["title"])}" '
+                f'post-type="{kind}" author="{t["author"]}" subreddit-prefixed-name="r/NoFap" comment-count="{len(t.get("replies", []))}"'
+                f'{" is-promoted" if promoted else ""}>'
+                f'<a slot="full-post-link" href="/r/NoFap/comments/r{t["id"]}/"></a>'
+                f'<span slot="credit-bar"><faceplate-timeago>5 days ago</faceplate-timeago> u/{t["author"]}</span>'
+                f'<a slot="title" id="post-title-t3_r{t["id"]}" href="/r/NoFap/comments/r{t["id"]}/">{esc(t["title"])}</a>'
+                f'{tb}</shreddit-post></article><hr class="border-b-neutral-border-weak">')
+
+    image = {"id": 88, "title": "Look at my 90 day progress chart", "slug": "chart", "author": "Img", "replies": []}
+    ad = {"id": 99, "title": "Download our premium habit app today", "slug": "ad", "author": "Ads", "replies": []}
+    batches = []
+    for p, ids in PAGES.items():
+        items = [post_html(BY_ID[i]) for i in ids]
+        items.insert(1, post_html(image, kind="image", body=""))
+        items.insert(2, post_html(ad, promoted=True, body="<p>Buy now</p>"))
+        if p == 2:
+            items.append(post_html(REDDIT_TITLE_ONLY, body=""))
+        batches.append("".join(items))
+    page = f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><title>r/NoFap</title></head>
+<body><shreddit-app><header><nav><a href="/">Reddit</a> <a href="/login">Log In</a></nav></header>
+<main><h1>r/NoFap</h1><shreddit-feed id="feed">{batches[0]}</shreddit-feed>
+<faceplate-partial id="loader">Loading more…</faceplate-partial></main></shreddit-app>
+<script>
+const MORE = {json.dumps(batches[1:])};
+let loading = false;
+window.addEventListener('scroll', () => {{
+  if (loading || !MORE.length) return;
+  if (window.innerHeight + window.scrollY < document.body.scrollHeight - 300) return;
+  loading = true;
+  setTimeout(() => {{
+    document.getElementById('feed').insertAdjacentHTML('beforeend', MORE.shift());
+    if (!MORE.length) document.getElementById('loader').remove();
+    loading = false;
+  }}, 300);
+}});
+</script></body></html>"""
+    add("/rs/r/NoFap/new/", "reddit_scroll/feed.html", page)
+    for t in list(THREADS) + [REDDIT_TITLE_ONLY]:
+        one = post_html(t, body=None if t.get("blocks") else "")
+        add(f"/rs/r/NoFap/comments/r{t['id']}/", f"reddit_scroll/post_{t['id']}.html",
+            f"<!doctype html><html><body><shreddit-app><main>{one}</main></shreddit-app></body></html>")
+    add("/rs/r/Blocked/new/", "reddit_scroll/blocked.html",
+        "<html><body><h1>whoa there, pardner!</h1><p>Your request has been blocked by network security.</p></body></html>",
+        status=403)
+
+
 def ambiguous():
     """A listing whose only pagination is an unlabeled 'More topics' link: the job must ask the user."""
     def page(ids, more):
@@ -1145,7 +1198,7 @@ def build() -> None:
         shutil.rmtree(ROOT)
     ROOT.mkdir(parents=True)
     ROUTES.clear()
-    for fn in (xf2, xf1, phpbb, vbulletin, discourse, nodebb, flarum, vanilla, oldboard, community, spa, misc, ambiguous, reddit, reddit_json):
+    for fn in (xf2, xf1, phpbb, vbulletin, discourse, nodebb, flarum, vanilla, oldboard, community, spa, misc, ambiguous, reddit, reddit_json, reddit_scroll):
         fn()
     (ROOT / "routes.json").write_text(json.dumps(ROUTES, indent=1, sort_keys=True), encoding="utf-8")
 

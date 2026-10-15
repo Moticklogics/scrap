@@ -74,12 +74,14 @@ Reddit is one endlessly scrolling list, so Reddit jobs are counted in **posts**,
 * files are named by post number: `Reddit_Posts_00001-00500.txt`, `Reddit_Posts_00501-01000.txt`, …
 * the job stops once **How many posts** have been saved
 
-Behind the scenes the app reads Reddit's public data feed (the `.json` version of the subreddit list):
-one request returns 100 posts with their full title and text, so 1,000 posts need only about 10 requests and no
-post pages are opened.
+How it reads Reddit: the app opens the subreddit page in the browser and keeps **scrolling down**, copying
+each post's title and text straight from the page, the same way you would scroll. Individual posts are not
+opened. In the scrolling list Reddit sometimes shows only the first lines of a very long post, and whatever
+the page shows is saved. The job stops when it reaches your post limit, or when Reddit stops loading new
+posts (the end of the list).
 
-**Reddit API key (recommended).** Reddit often refuses anonymous automated access ("blocked by network
-security"). The fix is Reddit's official API, which is free for personal use:
+**Optional: Reddit API key.** If you have access to Reddit's official API (free for personal use; Reddit
+may ask you to register first), a saved key makes Reddit jobs use the API instead of scrolling:
 1. Log in to Reddit, open https://www.reddit.com/prefs/apps and click **create another app…**
 2. Pick any name, choose **script**, set the redirect uri to `http://localhost:8080`, click **create app**.
 3. Paste the **client ID** (the short code under "personal use script") and the **secret** into

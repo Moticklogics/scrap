@@ -35,7 +35,15 @@ async def test_thread(browser: BrowserManager, url: str, profile: SiteProfile | 
         t = rd.parse_target(url)
         if t is not None and t.post_id:
             client = rd.RedditClient(browser, t, rd.load_credentials(data_dir) if data_dir else None, cfg.user_agent)
-            posts, _ = rd.parse_listing(await client.get(client.post_url()), t.base)
+            if client.api_mode:
+                posts, _ = rd.parse_listing(await client.get(client.post_url()), t.base)
+            else:
+                page = await browser.new_page()
+                try:
+                    await rd.open_feed(page, rd.page_url(t), cfg.page_timeout * 1000)
+                    posts = (await rd.read_page_posts(page, t.base))[:1]
+                finally:
+                    await page.close()
             if posts:
                 p = posts[0]
                 return {"ok": True, "url": p.url, "title": p.title, "text": rd.record_text(p), "confidence": 1.0,
@@ -116,6 +124,14 @@ async def analyze_reddit(browser: BrowserManager, url: str, cfg: JobConfig, data
     if t is None:
         raise ValueError("That doesn't look like a subreddit. Use r/name or a link like https://www.reddit.com/r/name/")
     client = rd.RedditClient(browser, t, rd.load_credentials(data_dir) if data_dir else None, cfg.user_agent)
+    if not client.api_mode:
+        page = await browser.new_page()
+        try:
+            await rd.open_feed(page, rd.page_url(t), cfg.page_timeout * 1000)
+            posts = await rd.read_page_posts(page, t.base)
+        finally:
+            await page.close()
+        return _reddit_result(url, t, posts, more=bool(posts) and not t.post_id, api_mode=False)
     try:
         data = await client.get(client.post_url() if t.post_id else client.listing_url())
     except rd.RedditAuthError as exc:
@@ -126,6 +142,11 @@ async def analyze_reddit(browser: BrowserManager, url: str, cfg: JobConfig, data
         raise BlockedError(f"{exc}. Reddit refuses anonymous automated access from your connection - add your free "
                            "Reddit API key under 'Reddit API access' in the Reddit tab") from exc
     posts, after = rd.parse_listing(data, t.base)
+    return _reddit_result(url, t, posts, more=bool(after), api_mode=True)
+
+
+def _reddit_result(url, t, posts, more: bool, api_mode: bool) -> dict:
+    from . import reddit as rd
     wanted = [p for p in posts if rd.wanted(p)]
     first = wanted[0] if wanted else None
     analysis = {
@@ -133,13 +154,13 @@ async def analyze_reddit(browser: BrowserManager, url: str, cfg: JobConfig, data
         "platform": "reddit", "platform_label": "Reddit", "platform_confidence": 1.0, "platform_signals": [],
         "platform_scores": [], "page_type": "thread" if t.post_id else "listing", "page_type_confidence": 1.0,
         "page_number": None, "blocked_reason": "",
-        "notes": [f"{len(posts)} posts downloaded, {len(wanted)} are text posts"],
+        "notes": [f"{len(posts)} posts read, {len(wanted)} are text posts"],
         "threads": {"count": len(wanted), "selector": "", "container_selector": "", "method": "reddit-json",
                     "confidence": 1.0, "items": [{"title": p.title, "url": p.url} for p in wanted],
                     "alternatives": []},
-        "pagination": {"next_url": client.listing_url(after) if after else None,
-                       "method": "Reddit API" if client.api_mode else "Reddit public feed",
-                       "confidence": 1.0, "current_page": None, "last_page": None, "is_last": not after,
+        "pagination": {"next_url": "more" if more else None,
+                       "method": "Reddit API" if api_mode else "scrolling the Reddit page",
+                       "confidence": 1.0, "current_page": None, "last_page": None, "is_last": not more,
                        "inferred": False, "needs_confirmation": False, "selector": "", "candidates": []},
     }
     preview = ({"ok": True, "url": first.url, "title": first.title, "text": rd.record_text(first), "confidence": 1.0,
@@ -148,4 +169,4 @@ async def analyze_reddit(browser: BrowserManager, url: str, cfg: JobConfig, data
     return {"analysis": analysis, "preview": preview, "http_status": 200,
             "suggested_profile": {"domain": "reddit.com", "platform": "reddit"}, "saved_profile": None,
             "reddit": {"subreddit": t.subreddit, "sort": t.sort, "posts_in_first_batch": len(posts),
-                       "api_mode": client.api_mode}}
+                       "api_mode": api_mode}}

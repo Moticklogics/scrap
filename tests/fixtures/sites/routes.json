@@ -399,6 +399,46 @@
   "content_type": "text/plain",
   "file": "misc/robots.txt"
  },
+ "/rs/r/Blocked/new/": {
+  "file": "reddit_scroll/blocked.html",
+  "status": 403
+ },
+ "/rs/r/NoFap/comments/r1/": {
+  "file": "reddit_scroll/post_1.html"
+ },
+ "/rs/r/NoFap/comments/r10/": {
+  "file": "reddit_scroll/post_10.html"
+ },
+ "/rs/r/NoFap/comments/r2/": {
+  "file": "reddit_scroll/post_2.html"
+ },
+ "/rs/r/NoFap/comments/r3/": {
+  "file": "reddit_scroll/post_3.html"
+ },
+ "/rs/r/NoFap/comments/r4/": {
+  "file": "reddit_scroll/post_4.html"
+ },
+ "/rs/r/NoFap/comments/r5/": {
+  "file": "reddit_scroll/post_5.html"
+ },
+ "/rs/r/NoFap/comments/r6/": {
+  "file": "reddit_scroll/post_6.html"
+ },
+ "/rs/r/NoFap/comments/r7/": {
+  "file": "reddit_scroll/post_7.html"
+ },
+ "/rs/r/NoFap/comments/r77/": {
+  "file": "reddit_scroll/post_77.html"
+ },
+ "/rs/r/NoFap/comments/r8/": {
+  "file": "reddit_scroll/post_8.html"
+ },
+ "/rs/r/NoFap/comments/r9/": {
+  "file": "reddit_scroll/post_9.html"
+ },
+ "/rs/r/NoFap/new/": {
+  "file": "reddit_scroll/feed.html"
+ },
  "/spa/board?p=1": {
   "file": "spa/board_p1.html"
  },
