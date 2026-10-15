@@ -345,10 +345,17 @@ class JobRunner:
         """Read a subreddit as a feed of posts (100 per request); returns True at the natural end."""
         from . import reddit as rd
         t = self.reddit
-        ua = self.cfg.user_agent or rd.USER_AGENT
+        client = rd.RedditClient(self.browser, t, rd.load_credentials(self.profiles.dir.parent), self.cfg.user_agent)
+        if client.api_mode:
+            self.activity = "Logging in to the Reddit API…"
+            try:
+                await client.check()
+            except rd.RedditAuthError as exc:
+                raise BlockedError(str(exc)) from exc
+            self._log("info", "platform", "using the official Reddit API with your app key")
         if t.post_id:  # a single post URL
             self.activity = "Reading the post…"
-            data = await self.browser.fetch_json(rd.post_url(t), ua)
+            data = await client.get(client.post_url())
             posts, _ = rd.parse_listing(data, t.base)
             self.db.upsert_page(self.job_id, 0, self.cfg.start_url, 1, "processing", thread_count=len(posts))
             for pos, p in enumerate(posts[:1]):
@@ -361,11 +368,11 @@ class JobRunner:
             return True
 
         url, seq, _prev = self._resume_point()
-        if seq == 0 or not url or ".json" not in url:
-            if seq == 0:
-                url = rd.listing_url(t)
         if url is None:
             return True
+        # rebuild the request for the current access mode (public feed / API), keeping the position
+        from .urls import get_query_param
+        url = client.listing_url(None if seq == 0 else get_query_param(url, "after"))
         if seq > 0:
             self._log("info", "resume", f"resuming the r/{t.subreddit} feed after {seq} batches")
         while url:
@@ -378,7 +385,7 @@ class JobRunner:
                 self._log("info", "max_posts", f"reached the configured maximum of {self.cfg.max_posts} posts")
                 self.db.update_job(self.job_id, message=f"finished: {self.cfg.max_posts} posts saved")
                 return True
-            if self.cfg.respect_robots and not await self.browser.robots_allowed(url):
+            if not client.api_mode and self.cfg.respect_robots and not await self.browser.robots_allowed(url):
                 raise BlockedError(
                     "Reddit's robots.txt asks automated tools not to read it. If your use is allowed by Reddit's "
                     "terms, untick 'Respect Reddit's robots.txt' and press 'Start collecting' again, or press "
@@ -387,7 +394,14 @@ class JobRunner:
             self.activity = f"{saved} posts saved · downloading the next 100 posts of r/{t.subreddit}…"
             self.current_page_url = url
             self.db.update_job(self.job_id, current_page_url=url, current_page_number=seq + 1)
-            data = await self.browser.fetch_json(url, ua)
+            try:
+                data = await client.get(url)
+            except BlockedError as exc:
+                if client.api_mode:
+                    raise
+                raise BlockedError(
+                    f"{exc}. Reddit refuses anonymous automated access from your connection. Fix: add your free "
+                    "Reddit API key in the Reddit tab ('Reddit API access'), then press Continue") from exc
             posts, after = rd.parse_listing(data, t.base)
             if not posts:
                 self._log("info", "end", f"r/{t.subreddit}: no more posts (Reddit lists about 1,000 per list)")
@@ -419,7 +433,7 @@ class JobRunner:
                 self.activity = f"{saved}{lim} posts saved · {p.title[:80]}"
             if self.stop_requested:
                 return False
-            next_url = rd.listing_url(t, after) if after else None
+            next_url = client.listing_url(after) if after else None
             self.writer.page_done(seq, seq + 1)
             self.db.upsert_page(self.job_id, seq, url, seq + 1, "done", next_url=next_url, next_method="reddit cursor")
             self.db.update_job(self.job_id, current_output_file=self.writer.current_file())

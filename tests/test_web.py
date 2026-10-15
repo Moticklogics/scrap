@@ -163,3 +163,19 @@ def test_reddit_preview(client, fresh_server, tmp_path):
     assert res["preview"]["ok"] and res["preview"]["text"].startswith("Welcome to the recovery forum")
     pv = client.post("/api/test-thread", json={"config": c, "url": an["threads"]["items"][1]["url"]}).json()
     assert pv["ok"] and pv["title"] == "Day 1: starting my journey"
+
+
+def test_reddit_api_key_endpoints(client, fresh_server, tmp_path):
+    assert client.get("/api/reddit-credentials").json()["configured"] is False
+    test_url = fresh_server.base + "/rj/r/NoFap/new/"
+    bad = client.put("/api/reddit-credentials", json={"client_id": "goodid", "client_secret": "nope", "test_url": test_url})
+    assert bad.status_code == 400 and "did not accept" in bad.json()["detail"]
+    ok = client.put("/api/reddit-credentials", json={"client_id": "goodid", "client_secret": "goodsecret",
+                                                     "username": "u/tester", "test_url": test_url})
+    assert ok.status_code == 200, ok.text
+    info = client.get("/api/reddit-credentials").json()
+    assert info == {"configured": True, "client_id": "goodid", "username": "tester"}  # secret never returned
+    c = cfg(fresh_server, "/rj/r/NoFap/new/", tmp_path, source="reddit")
+    res = client.post("/api/analyze", json={"config": c}).json()
+    assert res["reddit"]["api_mode"] is True and res["analysis"]["threads"]["count"] == 4
+    assert client.delete("/api/reddit-credentials").json()["configured"] is False

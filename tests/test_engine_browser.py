@@ -359,3 +359,39 @@ def test_reddit_feed_single_post_and_block(env):
     recs = parse_post_records(env.out)
     assert len(recs) == 1 and recs[0]["text"] == expected_text(BY_ID[9])
     assert s2["status"] == "blocked" and "network security" in s2["message"]
+
+
+def test_reddit_official_api_mode(env):
+    from forum_extractor import reddit as rd
+    rd.save_credentials(env.tmp, "goodid", "goodsecret", "tester")  # data dir = parent of profiles dir
+
+    async def go():
+        return await env.run(env.cfg("/rj/r/NoFap/new/", source="reddit", posts_per_file=500,
+                                     file_prefix="Reddit_Posts", request_delay=0, respect_robots=True))
+    m, job = asyncio.run(go())
+    st = m.status(job)
+    assert st["status"] == "completed" and st["threads_completed"] == 11, st
+    assert any("official Reddit API" in e["message"] for e in st["recent_events"])
+    # all listing requests went to the authorised API, none to the public feed
+    assert sum(v for k, v in env.server.hits.items() if k.startswith("/rj/oauth/")) == 3
+    assert not any(k.startswith("/rj/r/NoFap/new.json") for k in env.server.hits)
+
+
+def test_reddit_wrong_api_key(env):
+    from forum_extractor import reddit as rd
+    rd.save_credentials(env.tmp, "goodid", "WRONG")
+
+    async def go():
+        return await env.run(env.cfg("/rj/r/NoFap/new/", source="reddit", request_delay=0))
+    m, job = asyncio.run(go())
+    st = m.status(job)
+    assert st["status"] == "blocked" and "did not accept the API key" in st["message"]
+
+
+def test_reddit_public_block_suggests_api_key(env):
+    async def go():
+        return await env.run(env.cfg("/rj/r/Blocked/new/", source="reddit", request_delay=0, max_retries=0,
+                                     respect_robots=False))
+    m, job = asyncio.run(go())
+    st = m.status(job)
+    assert st["status"] == "blocked" and "API key" in st["message"]

@@ -20,7 +20,7 @@ main{max-width:1240px;margin:0 auto;padding:18px;display:grid;gap:18px}
 .card h2{font-size:16px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
 .card h3{font-size:13px;margin:14px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
 label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
-input[type=text],input[type=number],select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--fg);font:inherit}
+input[type=text],input[type=number],input[type=password],select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--fg);font:inherit}
 textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
 .row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
 .grow{flex:1;min-width:240px}
@@ -72,6 +72,7 @@ a{color:var(--accent)}
 .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px}
 .tab{border:none;border-bottom:3px solid transparent;border-radius:0;padding:8px 16px;font-weight:600;color:var(--muted);background:none}
 .tab.active{color:var(--fg);border-bottom-color:var(--accent)}
+.apibox{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:12px}
 .feed{list-style:none;margin:0;padding:0;max-height:320px;overflow:auto;font-size:13px}
 .feed li{padding:4px 0;border-bottom:1px dashed var(--line);display:flex;gap:8px}
 .feed .t{color:var(--muted);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;white-space:nowrap}
@@ -129,7 +130,33 @@ a{color:var(--accent)}
       (comments, image/link posts and ads are skipped). Files are named by post number, e.g. <code>Reddit_Posts_00001-00500.txt</code>.
       Reddit shows at most about 1,000 posts per list – choose another list (Hot / Top) to reach different posts.
     </div>
-    <div class="checks"><label><input type="checkbox" id="rd_robots" checked> Respect Reddit's robots.txt
+    <div class="apibox">
+      <div class="row" style="align-items:center;justify-content:space-between">
+        <div><b>Reddit API access</b> <span class="muted">– recommended; fixes "blocked by network security"</span></div>
+        <div id="rdApiStatus" class="muted">checking…</div>
+      </div>
+      <details id="rdApiForm">
+        <summary>Set up your free Reddit API key (about 2 minutes)</summary>
+        <ol style="margin:6px 0 10px 18px;padding:0">
+          <li>Log in to Reddit in your normal browser and open <a href="https://www.reddit.com/prefs/apps" target="_blank" rel="noopener">reddit.com/prefs/apps</a>.</li>
+          <li>Click <b>create another app…</b> (or <b>are you a developer? create an app…</b>).</li>
+          <li>Name: anything, e.g. <code>my-post-collector</code>. Choose <b>script</b>. Redirect uri: <code>http://localhost:8080</code>. Click <b>create app</b>.
+            If Reddit asks you to accept its API terms or register, follow its steps.</li>
+          <li>Copy the <b>client ID</b> (the short code under “personal use script”) and the <b>secret</b> into the boxes below.</li>
+        </ol>
+        <div class="grid">
+          <div><label>Client ID</label><input id="rd_cid" type="text" autocomplete="off"></div>
+          <div><label>Secret</label><input id="rd_secret" type="password" autocomplete="off"></div>
+          <div><label>Your Reddit username (optional)</label><input id="rd_user" type="text" autocomplete="off"></div>
+        </div>
+        <div class="btns" style="margin-top:8px">
+          <button class="primary small" id="rdSaveKey">Save &amp; test</button>
+          <button class="small danger" id="rdDeleteKey">Remove key</button>
+        </div>
+        <div class="muted" style="font-size:12px;margin-top:6px">The key is stored only on this computer (in the app's data folder). Reddit's free API is for personal, non-commercial use.</div>
+      </details>
+    </div>
+    <div class="checks"><label><input type="checkbox" id="rd_robots" checked> Respect Reddit's robots.txt (only used without an API key)
       <span class="muted">– Reddit asks automated tools not to crawl, so while this is ticked the job will stop. Untick it only if your use is allowed by Reddit's terms.</span></label></div>
   </div>
 
@@ -533,6 +560,29 @@ $("btnStart").onclick = startJob;
 $("rdStart").onclick = startJob;
 $("rdAnalyze").onclick = () => analyze(false);
 document.querySelectorAll(".tab").forEach(b => b.onclick = () => switchTab(b.dataset.tab));
+async function loadRedditKey() {
+  try {
+    const r = await api("/api/reddit-credentials");
+    $("rdApiStatus").innerHTML = r.configured
+      ? `<span class="ok">✔ Connected</span> <span class="muted">(client ID ${esc(r.client_id.slice(0, 6))}…)</span>`
+      : `<span class="warn">Not set up</span> <span class="muted">– anonymous access is often blocked by Reddit</span>`;
+    if (!r.configured) $("rdApiForm").open = true;
+    if (r.configured) { $("rd_cid").value = r.client_id; $("rd_user").value = r.username || ""; }
+  } catch (e) {}
+}
+$("rdSaveKey").onclick = async () => {
+  $("rdApiStatus").textContent = "⏳ testing the key with Reddit…";
+  try {
+    await api("/api/reddit-credentials", {method: "PUT", body: {client_id: $("rd_cid").value, client_secret: $("rd_secret").value, username: $("rd_user").value}});
+    $("rd_secret").value = ""; $("rdApiForm").open = false;
+    banner($("setupMsg"), "✔ Reddit API key works and is saved. Reddit jobs now use the official API.", "okb");
+  } catch (e) { banner($("setupMsg"), `✖ ${esc(e.message)}`, "badb"); }
+  loadRedditKey();
+};
+$("rdDeleteKey").onclick = async () => {
+  if (!confirm("Remove the saved Reddit API key from this computer?")) return;
+  await api("/api/reddit-credentials", {method: "DELETE"}); $("rd_cid").value = ""; $("rd_secret").value = ""; loadRedditKey();
+};
 $("btnExport").onclick = () => selectedJob && (location.href = `/api/jobs/${selectedJob}/log?format=jsonl`);
 $("btnExportCsv").onclick = () => selectedJob && (location.href = `/api/jobs/${selectedJob}/log?format=csv`);
 $("btnOpenFolder").onclick = async () => {
@@ -548,6 +598,7 @@ $("btnBrowse").onclick = async () => {
   const d = await api("/api/defaults");
   $("output_dir").value = d.config.output_dir;
   await loadJobs();
+  loadRedditKey();
   const running = lastJobs.find(j => j.running);
   if (running) select(running.id);
   setInterval(loadJobs, 2000);

@@ -113,3 +113,105 @@ def wanted(p: RedditPost) -> bool:
 
 def record_text(p: RedditPost) -> str:
     return p.text or EMPTY_BODY_TEXT
+
+
+# --------------------------------------------------------------------------- official API (OAuth)
+
+def credentials_path(data_dir) -> "Path":
+    from pathlib import Path
+    return Path(data_dir) / "reddit_api.json"
+
+
+def load_credentials(data_dir) -> dict | None:
+    import json
+    p = credentials_path(data_dir)
+    try:
+        d = json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if d.get("client_id") and d.get("client_secret"):
+        return d
+    return None
+
+
+def save_credentials(data_dir, client_id: str, client_secret: str, username: str = "") -> None:
+    import json
+    p = credentials_path(data_dir)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps({"client_id": client_id.strip(), "client_secret": client_secret.strip(),
+                             "username": re.sub(r"^/?u/", "", username.strip())}), encoding="utf-8")
+
+
+def delete_credentials(data_dir) -> None:
+    try:
+        credentials_path(data_dir).unlink()
+    except OSError:
+        pass
+
+
+class RedditAuthError(Exception):
+    pass
+
+
+class RedditClient:
+    """Reads Reddit listings: through the official API when an app key is saved, otherwise the public feed."""
+
+    def __init__(self, browser, target: RedditTarget, creds: dict | None = None, user_agent: str = ""):
+        self.browser = browser
+        self.t = target
+        self.creds = creds
+        self._token: str | None = None
+        self._token_expiry = 0.0
+        name = (creds or {}).get("username") or "unknown"
+        self.ua = user_agent or (f"windows:forum-post-extractor:1.0 (by /u/{name})" if creds else USER_AGENT)
+        if target.base == "https://www.reddit.com":
+            self.token_url = "https://www.reddit.com/api/v1/access_token"
+            self.api_base = "https://oauth.reddit.com"
+        else:  # test server
+            self.token_url = target.base + "/api/v1/access_token"
+            self.api_base = target.base + "/oauth"
+
+    @property
+    def api_mode(self) -> bool:
+        return self.creds is not None
+
+    async def _auth_headers(self) -> dict:
+        import base64
+        import json
+        import time
+        if not self.api_mode:
+            return {}
+        if not self._token or time.time() > self._token_expiry - 60:
+            basic = base64.b64encode(f"{self.creds['client_id']}:{self.creds['client_secret']}".encode()).decode()
+            status, body = await self.browser.post_form(
+                self.token_url, {"grant_type": "client_credentials"},
+                {"Authorization": f"Basic {basic}", "User-Agent": self.ua})
+            try:
+                data = json.loads(body)
+            except ValueError:
+                data = {}
+            if status != 200 or "access_token" not in data:
+                raise RedditAuthError(
+                    f"Reddit did not accept the API key (HTTP {status}{', ' + str(data.get('error')) if data.get('error') else ''}). "
+                    "Check the client ID and secret in the Reddit tab (the app type must be 'script').")
+            self._token = data["access_token"]
+            self._token_expiry = time.time() + float(data.get("expires_in", 3600))
+        return {"Authorization": f"bearer {self._token}"}
+
+    def listing_url(self, after: str | None = None) -> str:
+        if not self.api_mode:
+            return listing_url(self.t, after)
+        url = listing_url(self.t, after).replace(f"{self.t.base}/r/", f"{self.api_base}/r/", 1)
+        return url.replace(f"/{self.t.sort}.json?", f"/{self.t.sort}?", 1)
+
+    def post_url(self) -> str:
+        if not self.api_mode:
+            return post_url(self.t)
+        return f"{self.api_base}/r/{self.t.subreddit}/comments/{self.t.post_id}?raw_json=1&limit=1"
+
+    async def get(self, url: str):
+        return await self.browser.fetch_json(url, self.ua, await self._auth_headers())
+
+    async def check(self) -> None:
+        """Log in with the saved key (raises RedditAuthError when it is wrong)."""
+        await self._auth_headers()

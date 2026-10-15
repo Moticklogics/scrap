@@ -315,6 +315,26 @@
  "/reddit/r/NoFap/comments/r9/poem_for_anyone_struggling/": {
   "file": "reddit/thread_9.html"
  },
+ "/rj/api/v1/access_token": {
+  "content_type": "application/json",
+  "expect_basic": "Z29vZGlkOmdvb2RzZWNyZXQ=",
+  "file": "reddit_json/token.json"
+ },
+ "/rj/oauth/r/NoFap/new?limit=100&raw_json=1": {
+  "content_type": "application/json",
+  "file": "reddit_json/new_p1.json",
+  "require_auth": "bearer testtoken"
+ },
+ "/rj/oauth/r/NoFap/new?limit=100&raw_json=1&after=t3_r4": {
+  "content_type": "application/json",
+  "file": "reddit_json/new_p2.json",
+  "require_auth": "bearer testtoken"
+ },
+ "/rj/oauth/r/NoFap/new?limit=100&raw_json=1&after=t3_r7": {
+  "content_type": "application/json",
+  "file": "reddit_json/new_p3.json",
+  "require_auth": "bearer testtoken"
+ },
  "/rj/r/Blocked/new.json?limit=100&raw_json=1": {
   "file": "reddit_json/blocked.html",
   "status": 403

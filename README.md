@@ -78,6 +78,16 @@ Behind the scenes the app reads Reddit's public data feed (the `.json` version o
 one request returns 100 posts with their full title and text, so 1,000 posts need only about 10 requests and no
 post pages are opened.
 
+**Reddit API key (recommended).** Reddit often refuses anonymous automated access ("blocked by network
+security"). The fix is Reddit's official API, which is free for personal use:
+1. Log in to Reddit, open https://www.reddit.com/prefs/apps and click **create another app…**
+2. Pick any name, choose **script**, set the redirect uri to `http://localhost:8080`, click **create app**.
+3. Paste the **client ID** (the short code under "personal use script") and the **secret** into
+   **Reddit API access** in the Reddit tab and click **Save & test**.
+
+The key is stored only on your computer (`data/reddit_api.json`). With a key saved, all Reddit jobs use
+`oauth.reddit.com`.
+
 Things to know:
 * Reddit shows at most about 1,000 posts per list. To reach other posts, run another list (Hot, Top – all time…).
 * Reddit's robots.txt asks automated tools not to crawl. With **Respect Reddit's robots.txt** ticked, the job

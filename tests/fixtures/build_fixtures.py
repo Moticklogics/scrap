@@ -1108,6 +1108,18 @@ def reddit_json():
                {"kind": "Listing", "data": {"children": []}}]
         add(f"{base}/comments/r{t['id']}.json?raw_json=1&limit=1", f"reddit_json/post_{t['id']}.json", json.dumps(doc),
             content_type="application/json")
+    # official API (OAuth): token endpoint + authorised listings (same JSON, no .json suffix)
+    import base64
+    good = base64.b64encode(b"goodid:goodsecret").decode()
+    add("/rj/api/v1/access_token", "reddit_json/token.json",
+        json.dumps({"access_token": "testtoken", "token_type": "bearer", "expires_in": 86400, "scope": "*"}),
+        content_type="application/json", expect_basic=good)
+    for p, ids in PAGES.items():
+        params = [("limit", "100"), ("raw_json", "1")]
+        if p > 1:
+            params.append(("after", f"t3_r{PAGES[p - 1][-1]}"))
+        ROUTES[f"/rj/oauth/r/NoFap/new?{urlencode(params)}"] = {
+            "file": f"reddit_json/new_p{p}.json", "content_type": "application/json", "require_auth": "bearer testtoken"}
     # a subreddit that blocks us
     add("/rj/r/Blocked/new.json?limit=100&raw_json=1", "reddit_json/blocked.html",
         "<html><body><h1>whoa there, pardner!</h1><p>Your request has been blocked by network security.</p></body></html>",

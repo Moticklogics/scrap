@@ -32,6 +32,20 @@ class FixtureServer:
                     self.end_headers()
                     self.wfile.write(b"<html><body><h1>404 Not Found</h1></body></html>")
                     return
+                need = route.get("require_auth")
+                if need and self.headers.get("Authorization") != need:
+                    self.send_response(401)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(b'{"message": "Unauthorized", "error": 401}')
+                    return
+                basic = route.get("expect_basic")
+                if basic and self.headers.get("Authorization") != "Basic " + basic:
+                    self.send_response(401)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(b'{"error": "invalid_grant"}')
+                    return
                 fail_times = route.get("fail_times", 0)
                 with server.lock:
                     n = server.fail_counts.get(path, 0)
@@ -52,6 +66,8 @@ class FixtureServer:
                 self.send_header("Content-Length", str(len(data)))
                 self.end_headers()
                 self.wfile.write(data)
+
+            do_POST = do_GET
 
         self.httpd = ThreadingHTTPServer((host, port), Handler)
         self.httpd.daemon_threads = True

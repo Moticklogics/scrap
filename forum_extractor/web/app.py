@@ -131,7 +131,37 @@ def create_app(data: str | None = None) -> FastAPI:
         prof = effective_profile(store, url, payload.get("profile"))
         async with probe.lock:
             browser = await probe.get(cfg)
-            return await test_thread(browser, url, prof, cfg, payload.get("title", ""))
+            return await test_thread(browser, url, prof, cfg, payload.get("title", ""), data_dir=ddir)
+
+    # ------------------------------------------------------------------ Reddit API key
+    @app.get("/api/reddit-credentials")
+    async def get_reddit_creds():
+        from .. import reddit as rd
+        c = rd.load_credentials(ddir)
+        return {"configured": bool(c), "client_id": (c or {}).get("client_id", ""), "username": (c or {}).get("username", "")}
+
+    @app.put("/api/reddit-credentials")
+    async def put_reddit_creds(payload: dict = Body(...)):
+        from .. import reddit as rd
+        cid, secret = (payload.get("client_id") or "").strip(), (payload.get("client_secret") or "").strip()
+        if not cid or not secret:
+            raise HTTPException(400, "both the client ID and the secret are needed")
+        creds = {"client_id": cid, "client_secret": secret, "username": payload.get("username", "")}
+        target = rd.parse_target(payload.get("test_url") or "https://www.reddit.com/r/AskReddit/")
+        async with probe.lock:
+            browser = await probe.get(JobConfig(start_url="https://www.reddit.com/"))
+            try:
+                await rd.RedditClient(browser, target, creds).check()
+            except rd.RedditAuthError as exc:
+                raise HTTPException(400, str(exc))
+        rd.save_credentials(ddir, cid, secret, creds["username"])
+        return {"configured": True, "client_id": cid, "message": "Connected to the Reddit API"}
+
+    @app.delete("/api/reddit-credentials")
+    async def delete_reddit_creds():
+        from .. import reddit as rd
+        rd.delete_credentials(ddir)
+        return {"configured": False}
 
     # ------------------------------------------------------------------ profiles
     @app.get("/api/profiles")

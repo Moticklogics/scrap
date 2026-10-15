@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import replace
 
-from .browser import BrowserManager
+from .browser import BlockedError, BrowserManager
 from .classifier import make_classifier
 from .config import JobConfig, SiteProfile
 from .detection import HARD_BLOCKS, analyze_html, detect_blocking, detect_platform, suggest_profile
@@ -28,13 +28,14 @@ def effective_profile(store: ProfileStore, url: str, overrides: dict | None) -> 
 
 
 async def test_thread(browser: BrowserManager, url: str, profile: SiteProfile | None, cfg: JobConfig,
-                      title: str = "", platform_name: str | None = None) -> dict:
+                      title: str = "", platform_name: str | None = None, data_dir=None) -> dict:
     from .urls import is_reddit
     if cfg.source == "reddit" or is_reddit(url):
         from . import reddit as rd
         t = rd.parse_target(url)
         if t is not None and t.post_id:
-            posts, _ = rd.parse_listing(await browser.fetch_json(rd.post_url(t), cfg.user_agent or rd.USER_AGENT), t.base)
+            client = rd.RedditClient(browser, t, rd.load_credentials(data_dir) if data_dir else None, cfg.user_agent)
+            posts, _ = rd.parse_listing(await client.get(client.post_url()), t.base)
             if posts:
                 p = posts[0]
                 return {"ok": True, "url": p.url, "title": p.title, "text": rd.record_text(p), "confidence": 1.0,
@@ -64,7 +65,7 @@ async def analyze_url(browser: BrowserManager, url: str, store: ProfileStore, cf
     """Analyse a starting URL and (for listing pages) test-extract one thread."""
     from .urls import is_reddit
     if cfg.source == "reddit" or is_reddit(url):
-        return await analyze_reddit(browser, url, cfg)
+        return await analyze_reddit(browser, url, cfg, store.dir.parent)
     profile = effective_profile(store, url, overrides)
     snap = await browser.fetch(url)
     manual = cfg.mode == "manual"
@@ -108,14 +109,22 @@ async def analyze_url(browser: BrowserManager, url: str, store: ProfileStore, cf
     return result
 
 
-async def analyze_reddit(browser: BrowserManager, url: str, cfg: JobConfig) -> dict:
+async def analyze_reddit(browser: BrowserManager, url: str, cfg: JobConfig, data_dir=None) -> dict:
     """Preview of a subreddit: the first 100 posts of the chosen list and the first text post."""
     from . import reddit as rd
     t = rd.parse_target(url)
     if t is None:
         raise ValueError("That doesn't look like a subreddit. Use r/name or a link like https://www.reddit.com/r/name/")
-    ua = cfg.user_agent or rd.USER_AGENT
-    data = await browser.fetch_json(rd.post_url(t) if t.post_id else rd.listing_url(t), ua)
+    client = rd.RedditClient(browser, t, rd.load_credentials(data_dir) if data_dir else None, cfg.user_agent)
+    try:
+        data = await client.get(client.post_url() if t.post_id else client.listing_url())
+    except rd.RedditAuthError as exc:
+        raise BlockedError(str(exc)) from exc
+    except BlockedError as exc:
+        if client.api_mode:
+            raise
+        raise BlockedError(f"{exc}. Reddit refuses anonymous automated access from your connection - add your free "
+                           "Reddit API key under 'Reddit API access' in the Reddit tab") from exc
     posts, after = rd.parse_listing(data, t.base)
     wanted = [p for p in posts if rd.wanted(p)]
     first = wanted[0] if wanted else None
@@ -128,7 +137,8 @@ async def analyze_reddit(browser: BrowserManager, url: str, cfg: JobConfig) -> d
         "threads": {"count": len(wanted), "selector": "", "container_selector": "", "method": "reddit-json",
                     "confidence": 1.0, "items": [{"title": p.title, "url": p.url} for p in wanted],
                     "alternatives": []},
-        "pagination": {"next_url": rd.listing_url(t, after) if after else None, "method": "Reddit feed cursor",
+        "pagination": {"next_url": client.listing_url(after) if after else None,
+                       "method": "Reddit API" if client.api_mode else "Reddit public feed",
                        "confidence": 1.0, "current_page": None, "last_page": None, "is_last": not after,
                        "inferred": False, "needs_confirmation": False, "selector": "", "candidates": []},
     }
@@ -137,4 +147,5 @@ async def analyze_reddit(browser: BrowserManager, url: str, cfg: JobConfig) -> d
                if first else {"ok": False, "error": "no text posts in this list", "text": "", "candidates": []})
     return {"analysis": analysis, "preview": preview, "http_status": 200,
             "suggested_profile": {"domain": "reddit.com", "platform": "reddit"}, "saved_profile": None,
-            "reddit": {"subreddit": t.subreddit, "sort": t.sort, "posts_in_first_batch": len(posts)}}
+            "reddit": {"subreddit": t.subreddit, "sort": t.sort, "posts_in_first_batch": len(posts),
+                       "api_mode": client.api_mode}}

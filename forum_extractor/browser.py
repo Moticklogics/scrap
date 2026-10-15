@@ -206,13 +206,22 @@ class BrowserManager:
                         pass
         raise FetchError(f"{url}: {last_err} (after {self.max_retries + 1} attempts)")
 
-    async def fetch_json(self, url: str, user_agent: str = ""):
+    async def post_form(self, url: str, form: dict, headers: dict) -> tuple[int, str]:
+        """POST a form (used for the Reddit API login). Returns (status, body)."""
+        await self.start()
+        await self.limiter.wait()
+        resp = await self._context.request.post(url, form=form, headers=headers, timeout=self.timeout * 1000)
+        return resp.status, await resp.text()
+
+    async def fetch_json(self, url: str, user_agent: str = "", extra_headers: dict | None = None):
         """GET a JSON document (no page rendering). Retries 429/5xx and network errors with backoff."""
         import json as _json
         await self.start()
         headers = {"Accept": "application/json"}
         if user_agent:
             headers["User-Agent"] = user_agent
+        if extra_headers:
+            headers.update(extra_headers)
         attempt = 0
         last_err = ""
         while attempt <= self.max_retries:
