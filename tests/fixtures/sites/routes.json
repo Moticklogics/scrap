@@ -273,6 +273,48 @@
  "/private/forum": {
   "file": "misc/private.html"
  },
+ "/reddit/r/NoFap/": {
+  "file": "reddit/listing_p1.html"
+ },
+ "/reddit/r/NoFap/?count=25&after=t3_r4": {
+  "file": "reddit/listing_p2.html"
+ },
+ "/reddit/r/NoFap/?count=50&after=t3_r7": {
+  "file": "reddit/listing_p3.html"
+ },
+ "/reddit/r/NoFap/comments/r1/forum_rules_please_read_before_posting/": {
+  "file": "reddit/thread_1.html"
+ },
+ "/reddit/r/NoFap/comments/r10/long_post_about_my_first_90_days/": {
+  "file": "reddit/thread_10.html"
+ },
+ "/reddit/r/NoFap/comments/r2/day_1_starting_my_journey/": {
+  "file": "reddit/thread_2.html"
+ },
+ "/reddit/r/NoFap/comments/r3/relapsed_after_30_days_what_now/": {
+  "file": "reddit/thread_3.html"
+ },
+ "/reddit/r/NoFap/comments/r4/just_checking_in/": {
+  "file": "reddit/thread_4.html"
+ },
+ "/reddit/r/NoFap/comments/r5/caf_thoughts_na_ve_r_sum_of_my_week/": {
+  "file": "reddit/thread_5.html"
+ },
+ "/reddit/r/NoFap/comments/r6/responding_to_an_old_thread/": {
+  "file": "reddit/thread_6.html"
+ },
+ "/reddit/r/NoFap/comments/r7/my_tracking_script/": {
+  "file": "reddit/thread_7.html"
+ },
+ "/reddit/r/NoFap/comments/r77/is_cold_turkey_better_than_tapering/": {
+  "file": "reddit/thread_77.html"
+ },
+ "/reddit/r/NoFap/comments/r8/links_and_resources_that_helped/": {
+  "file": "reddit/thread_8.html"
+ },
+ "/reddit/r/NoFap/comments/r9/poem_for_anyone_struggling/": {
+  "file": "reddit/thread_9.html"
+ },
  "/robots.txt": {
   "content_type": "text/plain",
   "file": "misc/robots.txt"

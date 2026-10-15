@@ -5,182 +5,227 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Forum Post Extractor</title>
 <style>
-:root{--bg:#f6f7f9;--card:#fff;--fg:#1d2330;--muted:#667085;--line:#e3e6eb;--accent:#2f6fec;--ok:#1a7f4b;--warn:#b26b00;--bad:#c0362c;--code:#f1f3f6}
-@media (prefers-color-scheme:dark){:root{--bg:#14171c;--card:#1c2027;--fg:#e6e8eb;--muted:#98a2b3;--line:#2c323b;--accent:#6c9cff;--ok:#4cc38a;--warn:#f0b357;--bad:#ff7b72;--code:#232831}}
+:root{--bg:#f4f6f9;--card:#fff;--fg:#1b2130;--muted:#69738a;--line:#e2e6ec;--accent:#2f6fec;--accent-soft:#e8effd;
+  --ok:#17804a;--ok-soft:#e6f5ec;--warn:#a96400;--warn-soft:#fdf2e1;--bad:#c0362c;--bad-soft:#fbe9e7;--code:#f2f4f7}
+@media (prefers-color-scheme:dark){:root{--bg:#12151b;--card:#1b1f27;--fg:#e7e9ee;--muted:#9aa3b5;--line:#2b313c;
+  --accent:#6c9cff;--accent-soft:#1f2b45;--ok:#4cc38a;--ok-soft:#163323;--warn:#f0b357;--warn-soft:#3a2c14;--bad:#ff7b72;--bad-soft:#3d1d1b;--code:#232833}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-header{padding:14px 20px;border-bottom:1px solid var(--line);background:var(--card);display:flex;align-items:center;gap:12px}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{padding:14px 24px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:18px;flex-wrap:wrap}
 header h1{font-size:18px;margin:0}
-header .sub{color:var(--muted)}
-main{max-width:1200px;margin:0 auto;padding:16px;display:grid;gap:16px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
-.card h2{font-size:15px;margin:0 0 12px}
+.steps{display:flex;gap:6px;flex-wrap:wrap;color:var(--muted);font-size:13px}
+.steps span{background:var(--code);padding:2px 10px;border-radius:999px}
+main{max-width:1240px;margin:0 auto;padding:18px;display:grid;gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px}
+.card h2{font-size:16px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.card h3{font-size:13px;margin:14px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
 label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
-input[type=text],input[type=number],select,textarea{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg);font:inherit}
+input[type=text],input[type=number],select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--fg);font:inherit}
 textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
 .row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
 .grow{flex:1;min-width:240px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
-.checks{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px}
-.checks label{display:flex;gap:6px;align-items:center;color:var(--fg);font-size:13px}
-button{padding:7px 13px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer;font:inherit}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.checks{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px}
+.checks label{display:flex;gap:6px;align-items:center;color:var(--fg);font-size:13px;margin:0}
+button{padding:7px 14px;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer;font:inherit;white-space:nowrap}
+button:hover:not(:disabled){border-color:var(--accent)}
 button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.danger{color:var(--bad);border-color:var(--bad-soft)}
+button.danger:hover{background:var(--bad-soft)}
+button.small{padding:4px 10px;font-size:12.5px}
 button:disabled{opacity:.45;cursor:not-allowed}
-.btns{display:flex;flex-wrap:wrap;gap:8px}
-.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:12px 0}
-.stat{border:1px solid var(--line);border-radius:8px;padding:8px 10px}
-.stat b{display:block;font-size:18px}
+.btns{display:flex;flex-wrap:wrap;gap:6px}
+.banner{padding:10px 12px;border-radius:8px;margin-top:12px;background:var(--code)}
+.banner.info{background:var(--accent-soft)} .banner.okb{background:var(--ok-soft)} .banner.warnb{background:var(--warn-soft)} .banner.badb{background:var(--bad-soft)}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:10px 0}
+.stat{border:1px solid var(--line);border-radius:9px;padding:8px 11px}
+.stat b{display:block;font-size:20px}
 .stat span{color:var(--muted);font-size:12px}
-pre{background:var(--code);padding:10px;border-radius:6px;white-space:pre-wrap;word-break:break-word;max-height:420px;overflow:auto;margin:0;font-size:12.5px}
-table{width:100%;border-collapse:collapse;font-size:12.5px}
-th,td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top;word-break:break-word}
+pre{background:var(--code);padding:10px;border-radius:7px;white-space:pre-wrap;word-break:break-word;max-height:420px;overflow:auto;margin:0;font-size:12.5px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:6px;border-bottom:1px solid var(--line);vertical-align:top;word-break:break-word}
 th{color:var(--muted);font-weight:600}
-#threadTable td:first-child,#threadTable td:last-child{white-space:nowrap;width:1%}
-#threadTable button{padding:3px 10px;white-space:nowrap}
-.badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;border:1px solid currentColor}
+.nowrap{white-space:nowrap;width:1%}
+.pill{display:inline-block;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:600}
+.p-running{background:var(--accent-soft);color:var(--accent)} .p-completed{background:var(--ok-soft);color:var(--ok)}
+.p-paused,.p-awaiting_confirmation,.p-stopping{background:var(--warn-soft);color:var(--warn)}
+.p-error,.p-blocked{background:var(--bad-soft);color:var(--bad)} .p-stopped,.p-interrupted,.p-created{background:var(--code);color:var(--muted)}
+.badge{display:inline-block;padding:0 8px;border-radius:999px;font-size:12px;border:1px solid currentColor}
 .ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}.muted{color:var(--muted)}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media (max-width:860px){.two{grid-template-columns:1fr}}
-.hidden{display:none}
-details summary{cursor:pointer;color:var(--muted);margin:8px 0}
-.msg{padding:8px 10px;border-radius:6px;background:var(--code);margin-top:10px}
-.scroll{max-height:260px;overflow:auto}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:900px){.two{grid-template-columns:1fr}}
+.hidden{display:none!important}
+details>summary{cursor:pointer;color:var(--muted);margin:6px 0;font-weight:600}
+.scroll{max-height:300px;overflow:auto}
 a{color:var(--accent)}
+.bar{height:8px;background:var(--code);border-radius:999px;overflow:hidden;margin:6px 0}
+.bar>i{display:block;height:100%;background:var(--accent);transition:width .4s}
+.bar.indet>i{width:30%!important;animation:slide 1.4s infinite linear}
+@keyframes slide{from{margin-left:-30%}to{margin-left:100%}}
+.job{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px;cursor:pointer}
+.job.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.job .top{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.job .url{font-weight:600;word-break:break-all}
+.job .act{color:var(--muted);font-size:13px;margin-top:2px}
+.job .nums{display:flex;gap:14px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+.job .nums b{color:var(--fg)}
+.feed{list-style:none;margin:0;padding:0;max-height:320px;overflow:auto;font-size:13px}
+.feed li{padding:4px 0;border-bottom:1px dashed var(--line);display:flex;gap:8px}
+.feed .t{color:var(--muted);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;white-space:nowrap}
+.ico{width:18px;text-align:center;flex:none}
 </style>
 </head>
 <body>
-<header><h1>Forum Post Extractor</h1><span class="sub">paste a forum URL → validate the preview → collect original posts to .txt</span></header>
+<header>
+  <h1>Forum Post Extractor</h1>
+  <div class="steps"><span>1 · Paste a forum or Reddit URL</span><span>2 · Analyze &amp; check the preview</span><span>3 · Start – follow it below</span></div>
+</header>
 <main>
 
 <section class="card">
-  <h2>1. Source &amp; settings</h2>
+  <h2>1. What do you want to collect?</h2>
   <div class="row">
-    <div class="grow"><label for="url">Starting URL (forum listing page or a single thread)</label>
-      <input id="url" type="text" placeholder="https://forum.example.com/index.php?forums/general.2/page-2"></div>
-    <button class="primary" id="btnAnalyze">Analyze &amp; preview</button>
+    <div class="grow"><label for="url">Forum listing page, subreddit, or a single thread</label>
+      <input id="url" type="text" placeholder="https://forum.example.com/index.php?forums/general.2/  or  https://www.reddit.com/r/NoFap/new/"></div>
+    <button id="btnAnalyze">Analyze &amp; preview</button>
+    <button class="primary" id="btnStart">Start collecting</button>
   </div>
-  <div class="grid" style="margin-top:12px">
-    <div><label>Maximum listing pages (empty = all)</label><input id="max_pages" type="number" min="1"></div>
-    <div><label>Pages per text file</label><input id="pages_per_file" type="number" min="1" value="1100"></div>
-    <div><label>Request delay (seconds)</label><input id="request_delay" type="number" min="0" step="0.1" value="1"></div>
-    <div><label>Max concurrent threads</label><input id="max_concurrency" type="number" min="1" max="16" value="2"></div>
-    <div><label>Confidence threshold</label><input id="confidence_threshold" type="number" min="0" max="1" step="0.05" value="0.6"></div>
-    <div><label>Detection mode</label><select id="mode"><option value="auto">Automatic detection</option><option value="manual">Manual selectors (saved profile only)</option></select></div>
-    <div><label>File name prefix</label><input id="file_prefix" type="text" value="Forum_Pages"></div>
-    <div><label>AI classifier (local, experimental)</label><select id="ai_classifier"><option value="none">Off</option><option value="ollama">Ollama (localhost)</option></select></div>
-  </div>
-  <div class="row" style="margin-top:10px">
-    <div class="grow"><label>Output folder</label><input id="output_dir" type="text"></div>
-    <button id="btnBrowse" title="Opens a folder picker on this computer (if available)">Browse…</button>
-    <button id="btnOpenFolder">Open output folder</button>
-  </div>
-  <div class="checks">
-    <label><input type="checkbox" id="resume_previous" checked> Resume previous session for this URL</label>
-    <label><input type="checkbox" id="skip_duplicates" checked> Skip duplicate threads</label>
-    <label><input type="checkbox" id="respect_robots" checked> Respect robots.txt</label>
-    <label><input type="checkbox" id="exclude_quotes" checked> Remove quoted text from posts</label>
-    <label><input type="checkbox" id="headful"> Show browser window</label>
-  </div>
-  <div id="setupMsg" class="msg hidden"></div>
+  <div id="siteHint" class="banner info hidden"></div>
+  <div id="setupMsg" class="banner hidden"></div>
+  <details id="settingsBox" open>
+    <summary>Settings</summary>
+    <div class="grid" style="margin-top:6px">
+      <div><label>Maximum listing pages (empty = all)</label><input id="max_pages" type="number" min="1"></div>
+      <div><label>Listing pages per text file</label><input id="pages_per_file" type="number" min="1" value="10"></div>
+      <div><label>Delay between requests (seconds)</label><input id="request_delay" type="number" min="0" step="0.1" value="1"></div>
+      <div><label>Threads read at the same time</label><input id="max_concurrency" type="number" min="1" max="16" value="2"></div>
+      <div><label>Confidence threshold (0–1)</label><input id="confidence_threshold" type="number" min="0" max="1" step="0.05" value="0.6"></div>
+      <div><label>Detection mode</label><select id="mode"><option value="auto">Automatic</option><option value="manual">Saved selectors only</option></select></div>
+      <div><label>File name prefix</label><input id="file_prefix" type="text" value="Forum_Pages"></div>
+      <div><label>AI helper (local Ollama, experimental)</label><select id="ai_classifier"><option value="none">Off</option><option value="ollama">On</option></select></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div class="grow"><label>Output folder (text files are saved here)</label><input id="output_dir" type="text"></div>
+      <button id="btnBrowse">Browse…</button>
+      <button id="btnOpenFolder">Open folder</button>
+    </div>
+    <div class="checks">
+      <label><input type="checkbox" id="resume_previous" checked> Continue an unfinished job for the same URL</label>
+      <label><input type="checkbox" id="skip_duplicates" checked> Skip duplicate threads</label>
+      <label><input type="checkbox" id="respect_robots" checked> Respect robots.txt</label>
+      <label><input type="checkbox" id="exclude_quotes" checked> Remove quoted text</label>
+      <label><input type="checkbox" id="headful"> Show the browser window</label>
+    </div>
+  </details>
 </section>
 
 <section class="card hidden" id="previewCard">
-  <h2>2. Detection &amp; extraction preview</h2>
+  <h2>2. Preview – check this before starting</h2>
   <div class="stats" id="detStats"></div>
   <div class="two">
     <div>
-      <h3 style="font-size:13px;margin:4px 0">Discussion threads found on this page <span id="threadCount" class="muted"></span></h3>
-      <div class="scroll"><table id="threadTable"><thead><tr><th>#</th><th>Title</th><th></th></tr></thead><tbody></tbody></table></div>
-      <h3 style="font-size:13px;margin:14px 0 4px">Next listing page</h3>
+      <h3>Threads found on this page <span id="threadCount"></span></h3>
+      <div class="scroll"><table id="threadTable"><tbody></tbody></table></div>
+      <h3>Next page</h3>
       <div id="nextInfo"></div>
       <div id="pageCandidates"></div>
     </div>
     <div>
-      <h3 style="font-size:13px;margin:4px 0">Original post of: <span id="pvTitle" class="muted"></span></h3>
-      <div id="pvMeta" style="margin-bottom:6px"></div>
+      <h3>Extracted original post</h3>
+      <div><b id="pvTitle"></b></div>
+      <div id="pvMeta" style="margin:4px 0 8px"></div>
       <pre id="pvText"></pre>
       <div class="row" style="margin-top:8px">
         <div class="grow"><label>Test another thread URL</label><input id="testUrl" type="text"></div>
-        <button id="btnTest">Test extraction on one thread</button>
+        <button id="btnTest">Test this thread</button>
       </div>
-      <details><summary>First post container (HTML)</summary><pre id="pvHtml"></pre></details>
-      <details><summary>All candidates evaluated</summary><div class="scroll"><table id="candTable"><thead><tr><th>Method</th><th>Conf.</th><th>Selector</th><th>Result</th></tr></thead><tbody></tbody></table></div></details>
+      <details><summary>Post container HTML</summary><pre id="pvHtml"></pre></details>
+      <details><summary>All candidates evaluated</summary><div class="scroll"><table id="candTable"><tbody></tbody></table></div></details>
     </div>
   </div>
-</section>
-
-<section class="card hidden" id="profileCard">
-  <h2>Site profile (selectors) for <span id="profDomain"></span> <span id="profSource" class="muted"></span></h2>
-  <p class="muted" style="margin-top:-6px">Filled in automatically. Correct any field once and save; the profile is reused for this forum. CSS selectors.</p>
-  <div class="grid">
-    <div><label>Listing-page region (optional)</label><input id="p_listing_container_selector" type="text"></div>
-    <div><label>Thread-link selector</label><input id="p_thread_link_selector" type="text"></div>
-    <div><label>Thread title (inside link, optional)</label><input id="p_thread_title_selector" type="text"></div>
-    <div><label>Next-page selector</label><input id="p_next_page_selector" type="text"></div>
-    <div><label>Post-container selector</label><input id="p_post_container_selector" type="text"></div>
-    <div><label>First-post selector (optional)</label><input id="p_first_post_selector" type="text"></div>
-    <div><label>Post-body selector (inside container)</label><input id="p_post_body_selector" type="text"></div>
-    <div><label>Platform</label><input id="p_platform" type="text"></div>
-  </div>
-  <div style="margin-top:10px"><label>Unwanted child elements (one selector per line)</label><textarea id="p_exclude_selectors" rows="4"></textarea></div>
-  <div class="btns" style="margin-top:10px">
-    <button id="btnRetest">Re-test with these selectors</button>
-    <button id="btnSaveProfile" class="primary">Save profile</button>
-    <button id="btnDeleteProfile">Delete saved profile</button>
-  </div>
-  <div id="profMsg" class="msg hidden"></div>
+  <details id="profileBox">
+    <summary>Advanced: site selectors for <span id="profDomain"></span> <span id="profSource" class="muted"></span></summary>
+    <p class="muted" style="margin-top:0">Filled in automatically. Only change them if the preview is wrong; then re-test and save. CSS selectors.</p>
+    <div class="grid">
+      <div><label>Listing-page region</label><input id="p_listing_container_selector" type="text"></div>
+      <div><label>Thread-link selector</label><input id="p_thread_link_selector" type="text"></div>
+      <div><label>Thread title (inside link)</label><input id="p_thread_title_selector" type="text"></div>
+      <div><label>Next-page selector</label><input id="p_next_page_selector" type="text"></div>
+      <div><label>Post-container selector</label><input id="p_post_container_selector" type="text"></div>
+      <div><label>First-post selector</label><input id="p_first_post_selector" type="text"></div>
+      <div><label>Post-body selector</label><input id="p_post_body_selector" type="text"></div>
+      <div><label>Platform</label><input id="p_platform" type="text"></div>
+    </div>
+    <div style="margin-top:10px"><label>Remove these elements (one selector per line)</label><textarea id="p_exclude_selectors" rows="4"></textarea></div>
+    <div class="btns" style="margin-top:10px">
+      <button id="btnRetest">Re-test with these selectors</button>
+      <button id="btnSaveProfile" class="primary">Save for this site</button>
+      <button id="btnDeleteProfile" class="danger">Delete saved selectors</button>
+    </div>
+    <div id="profMsg" class="banner hidden"></div>
+  </details>
 </section>
 
 <section class="card">
-  <h2>3. Run collection</h2>
-  <div class="btns">
-    <button class="primary" id="btnStart">Start</button>
-    <button id="btnPause" disabled>Pause</button>
-    <button id="btnResume" disabled>Resume</button>
-    <button id="btnStop" disabled>Stop</button>
-    <button id="btnRetry" disabled>Retry failed threads</button>
-    <button id="btnExport" disabled>Export processing log</button>
-    <button id="btnExportCsv" disabled>Export thread list (CSV)</button>
-  </div>
-  <div id="jobMsg" class="msg hidden"></div>
-  <div id="confirmBox" class="msg hidden"></div>
+  <h2>3. Jobs <span class="muted" style="font-weight:400;font-size:13px">– click a job to see its details</span></h2>
+  <div id="jobsList"><p class="muted">No jobs yet. Paste a URL above and press <b>Start collecting</b>.</p></div>
+</section>
+
+<section class="card hidden" id="detailCard">
+  <h2>Job details <span id="dTitle" class="muted" style="font-weight:400;font-size:13px"></span></h2>
+  <div id="dStatus"></div>
+  <div id="confirmBox" class="banner warnb hidden"></div>
   <div class="stats" id="jobStats"></div>
-  <div id="filesBox" class="hidden" style="margin-bottom:12px"><h3 style="font-size:13px;margin:4px 0">Output files (click to download)</h3><div id="filesList"></div></div>
   <div class="two">
-    <div><h3 style="font-size:13px;margin:4px 0">Recent errors</h3><div class="scroll"><table id="errTable"><tbody></tbody></table></div></div>
-    <div><h3 style="font-size:13px;margin:4px 0">Current output (tail) <span id="outFile" class="muted"></span></h3><pre id="outTail" style="max-height:260px"></pre></div>
+    <div>
+      <h3>Live activity</h3>
+      <ul class="feed" id="feed"></ul>
+    </div>
+    <div>
+      <h3>Text files</h3>
+      <div id="filesList" class="muted">No files yet.</div>
+      <h3>Problems</h3>
+      <div class="scroll" style="max-height:160px"><table id="errTable"><tbody></tbody></table></div>
+      <div class="btns" style="margin-top:10px">
+        <button id="btnExport" class="small">Download log</button>
+        <button id="btnExportCsv" class="small">Download thread list (CSV)</button>
+      </div>
+    </div>
   </div>
-</section>
-
-<section class="card">
-  <h2>Previous jobs</h2>
-  <div class="scroll"><table id="jobsTable"><thead><tr><th>Job</th><th>Status</th><th>Done</th><th>Failed</th><th>URL</th><th></th></tr></thead><tbody></tbody></table></div>
+  <details><summary>Latest saved text <span id="outFile" class="muted"></span></summary><pre id="outTail" style="max-height:320px"></pre></details>
 </section>
 </main>
 
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let currentJob = null, pollTimer = null, lastAnalysis = null;
+let selectedJob = null, lastJobs = [];
 const PFIELDS = ["listing_container_selector","thread_link_selector","thread_title_selector","next_page_selector",
   "post_container_selector","first_post_selector","post_body_selector","platform"];
+const STATUS_TEXT = {running: "Running", completed: "Finished", paused: "Paused", stopping: "Stopping…",
+  stopped: "Cancelled (can continue)", interrupted: "Interrupted (can continue)", error: "Error", blocked: "Blocked",
+  awaiting_confirmation: "Needs your answer", created: "Starting"};
 
 async function api(path, opts={}) {
-  const r = await fetch(path, {headers:{"Content-Type":"application/json"}, ...opts,
+  const r = await fetch(path, {headers: {"Content-Type": "application/json"}, ...opts,
     body: opts.body ? JSON.stringify(opts.body) : undefined});
   const ct = r.headers.get("content-type") || "";
   const data = ct.includes("json") ? await r.json() : await r.text();
   if (!r.ok) throw new Error((data && data.detail) ? (typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail)) : r.statusText);
   return data;
 }
-function show(el, text, cls="") { el.classList.remove("hidden"); el.className = "msg " + cls; el.innerHTML = text; }
+function banner(el, html, kind="") { el.className = "banner " + kind; el.innerHTML = html; }
 function confClass(c) { return c >= 0.8 ? "ok" : c >= 0.6 ? "warn" : "bad"; }
-function badge(c) { return `<span class="badge ${confClass(c)}">${(c*100).toFixed(0)}%</span>`; }
+function badge(c) { return `<span class="badge ${confClass(c)}">${Math.round(c * 100)}%</span>`; }
+function pill(s) { return `<span class="pill p-${esc(s)}">${esc(STATUS_TEXT[s] || s)}</span>`; }
+function fmtDur(sec) { if (sec == null) return "–"; const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  return h ? `${h}h ${m}m` : m ? `${m}m ${s}s` : `${s}s`; }
+const isReddit = u => /(^|\.|\/\/)reddit\.com\//i.test(u || "");
 
 function config() {
   const n = id => $(id).value === "" ? null : Number($(id).value);
   return {start_url: $("url").value.trim(), output_dir: $("output_dir").value.trim() || "output",
-    max_pages: n("max_pages"), pages_per_file: n("pages_per_file") || 1100, request_delay: n("request_delay") ?? 1,
+    max_pages: n("max_pages"), pages_per_file: n("pages_per_file") || 10, request_delay: n("request_delay") ?? 1,
     max_concurrency: n("max_concurrency") || 2, confidence_threshold: n("confidence_threshold") ?? 0.6,
     mode: $("mode").value, file_prefix: $("file_prefix").value.trim() || "Forum_Pages",
     skip_duplicates: $("skip_duplicates").checked, respect_robots: $("respect_robots").checked,
@@ -194,197 +239,246 @@ function profileFromForm() {
   return p;
 }
 function fillProfile(p, saved) {
-  $("profileCard").classList.remove("hidden");
   $("profDomain").textContent = p.domain || "";
-  $("profSource").textContent = saved ? `(saved profile: ${saved.source})` : "(not saved yet)";
+  $("profSource").textContent = saved ? `(saved: ${saved.source})` : "(automatic)";
   for (const f of PFIELDS) $("p_" + f).value = p[f] || "";
   $("p_exclude_selectors").value = (p.exclude_selectors || []).join("\n");
 }
 
+// ---------------------------------------------------------------- site hint
+function updateHint() {
+  const u = $("url").value.trim();
+  if (isReddit(u)) {
+    banner($("siteHint"), `<b>Reddit mode.</b> Pages are read through <code>old.reddit.com</code> (25 posts per page with real "next" links).
+      For every <b>text post</b> the title and the question are saved – comments, image/link posts and ads are skipped.
+      Reddit only lets you go back about 1,000 posts per listing (e.g. /new/). Use a delay of 2 seconds or more.
+      ${$("respect_robots").checked ? `<br><span class="warn">Reddit's robots.txt asks bots not to crawl, so with “Respect robots.txt” ticked the job will stop.
+      Untick it only if you accept Reddit's terms for your use.</span>` : ""}`, "info");
+    if (Number($("request_delay").value) < 2) $("request_delay").value = 2;
+    if ($("file_prefix").value === "Forum_Pages") $("file_prefix").value = "Reddit_Pages";
+  } else { $("siteHint").classList.add("hidden"); if ($("file_prefix").value === "Reddit_Pages") $("file_prefix").value = "Forum_Pages"; }
+}
+
+// ---------------------------------------------------------------- preview
 function renderPreview(pv) {
   if (!pv) return;
   $("pvTitle").textContent = pv.title || pv.url || "";
   const warn = (pv.warnings || []).map(w => `<div class="warn">⚠ ${esc(w)}</div>`).join("");
   $("pvMeta").innerHTML = pv.ok
-    ? `${badge(pv.confidence)} via <b>${esc(pv.method)}</b> · ${pv.post_count || "?"} post(s) on page · <a href="${esc(pv.url)}" target="_blank" rel="noopener">open thread</a>${warn}`
+    ? `<span class="ok">✔ Looks right</span> ${badge(pv.confidence)} via ${esc(pv.method)} · <a href="${esc(pv.url)}" target="_blank" rel="noopener">open thread</a>${warn}`
     : `<span class="bad">✖ ${esc(pv.error || "extraction failed")}</span> ${pv.confidence ? badge(pv.confidence) : ""}${warn}`;
   $("pvText").textContent = pv.text || "(no text)";
   $("pvHtml").textContent = pv.container_html || "";
-  $("testUrl").value = pv.url || $("testUrl").value;
+  if (pv.url) $("testUrl").value = pv.url;
   $("candTable").querySelector("tbody").innerHTML = (pv.candidates || []).map(c =>
-    `<tr><td>${esc(c.method)}</td><td>${c.rejected ? "" : badge(c.confidence)}</td><td><code>${esc(c.container_selector)}</code><br><code>${esc(c.body_selector)}</code></td>
-     <td>${c.rejected ? `<span class="bad">${esc(c.rejected)}</span>` : esc(c.preview).slice(0, 160)}</td></tr>`).join("");
+    `<tr><td>${esc(c.method)}</td><td>${c.rejected ? "" : badge(c.confidence)}</td><td><code>${esc(c.container_selector)}</code></td>
+     <td>${c.rejected ? `<span class="bad">${esc(c.rejected)}</span>` : esc(c.preview).slice(0, 140)}</td></tr>`).join("");
 }
-
 function renderAnalysis(res) {
-  lastAnalysis = res;
   const a = res.analysis;
   $("previewCard").classList.remove("hidden");
-  const pt = {listing: "Forum listing", thread: "Discussion thread", blocked: "Blocked", other: "Unknown page"}[a.page_type] || a.page_type;
+  const pt = {listing: "List of threads", thread: "Single thread", blocked: "Blocked", other: "Unknown page"}[a.page_type] || a.page_type;
   $("detStats").innerHTML = [
-    ["Page type", `${esc(pt)} ${badge(a.page_type_confidence)}`],
-    ["Platform", `${esc(a.platform_label)} ${a.platform_confidence ? badge(a.platform_confidence) : ""}`],
-    ["Listing page no.", a.page_number ?? "?"],
-    ["Thread links", `${a.threads.count} via ${esc(a.threads.method)} ${a.threads.count ? badge(a.threads.confidence) : ""}`],
-  ].map(([k, v]) => `<div class="stat"><span>${k}</span><b style="font-size:14px">${v}</b></div>`).join("");
-  if (a.blocked_reason) show($("setupMsg"), `<span class="bad">Access blocked (${esc(a.blocked_reason)}). The extractor does not bypass CAPTCHAs or logins.</span>`);
+    ["Page type", `${esc(pt)}`], ["Site", `${esc(a.platform_label)}`],
+    ["Page number", a.page_number ?? "–"], ["Threads on page", `${a.threads.count}`],
+  ].map(([k, v]) => `<div class="stat"><span>${k}</span><b style="font-size:15px">${v}</b></div>`).join("");
   $("threadCount").textContent = `(${a.threads.count})`;
   $("threadTable").querySelector("tbody").innerHTML = a.threads.items.slice(0, 100).map((t, i) =>
-    `<tr><td>${i + 1}</td><td><a href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.title)}</a></td>
-     <td><button data-test="${esc(t.url)}" data-title="${esc(t.title)}">Preview</button></td></tr>`).join("") ||
-    `<tr><td colspan="3" class="bad">No thread links detected. Edit the thread-link selector below.</td></tr>`;
+    `<tr><td class="nowrap muted">${i + 1}</td><td><a href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.title)}</a></td>
+     <td class="nowrap"><button class="small" data-test="${esc(t.url)}" data-title="${esc(t.title)}">Preview</button></td></tr>`).join("") ||
+    `<tr><td class="bad">No threads detected. Open "Advanced: site selectors" to set them.</td></tr>`;
   const pg = a.pagination;
   $("nextInfo").innerHTML = pg.next_url
-    ? `<a href="${esc(pg.next_url)}" target="_blank" rel="noopener">${esc(pg.next_url)}</a><br><span class="muted">${esc(pg.method)}</span> ${badge(pg.confidence)} ${pg.inferred ? '<span class="warn">(inferred; verified while crawling)</span>' : ""}`
-    : pg.is_last ? `<span class="ok">This is the last page</span> <span class="muted">(${esc(pg.method)})</span>`
-    : `<span class="warn">Pagination could not be identified.</span>`;
+    ? `<a href="${esc(pg.next_url)}" target="_blank" rel="noopener">${esc(pg.next_url)}</a> ${badge(pg.confidence)}`
+    : pg.is_last ? `<span class="ok">This is the last page.</span>` : `<span class="warn">No next page found – the job will ask you.</span>`;
   $("pageCandidates").innerHTML = (pg.needs_confirmation && pg.candidates.length)
-    ? `<p class="muted">Page links found on this page (the job will ask you to confirm the next page):</p><table>${pg.candidates.slice(0, 15).map(c =>
-        `<tr><td><a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.url)}</a></td><td>${esc(c.text)}</td><td class="muted">${esc(c.reason)}</td></tr>`).join("")}</table>` : "";
+    ? `<div class="muted">Page links found:</div><table>${pg.candidates.slice(0, 10).map(c =>
+        `<tr><td><a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.url)}</a></td><td>${esc(c.text)}</td></tr>`).join("")}</table>` : "";
   renderPreview(res.preview);
   fillProfile(res.suggested_profile, res.saved_profile);
 }
-
 async function analyze(withProfile=false) {
   const cfg = config();
-  if (!cfg.start_url) { show($("setupMsg"), "Enter a starting URL.", "bad"); return; }
-  show($("setupMsg"), "Opening the page in the browser and analysing its structure…");
+  if (!cfg.start_url) { banner($("setupMsg"), "Paste a URL first.", "badb"); return; }
+  banner($("setupMsg"), "⏳ Opening the page in a browser and working out how the site is built… (10–30 seconds)", "info");
   $("btnAnalyze").disabled = true;
   try {
     const res = await api("/api/analyze", {method: "POST", body: {config: cfg, profile: withProfile ? profileFromForm() : null}});
     renderAnalysis(res);
     const pv = res.preview || {};
-    show($("setupMsg"), pv.ok ? `<span class="ok">✔ Detection looks good.</span> Check the preview, then press Start.`
-      : `<span class="warn">Automatic extraction is not confident for this forum.</span> Review the selectors below, correct them and re-test.`);
-  } catch (e) { show($("setupMsg"), `<span class="bad">${esc(e.message)}</span>`); }
+    if (res.analysis.page_type === "blocked")
+      banner($("setupMsg"), `✖ The site blocked access (${esc(res.analysis.blocked_reason)}). This tool does not bypass logins or CAPTCHAs.`, "badb");
+    else banner($("setupMsg"), pv.ok ? `✔ Everything looks good. Check the preview below, then press <b>Start collecting</b>.`
+      : `⚠ The automatic extraction is not sure about this site. Check the preview below.`, pv.ok ? "okb" : "warnb");
+    $("previewCard").scrollIntoView({behavior: "smooth", block: "start"});
+  } catch (e) { banner($("setupMsg"), `✖ ${esc(e.message)}`, "badb"); }
   finally { $("btnAnalyze").disabled = false; }
 }
-
 async function testThread(url, title="") {
   if (!url) return;
-  $("pvText").textContent = "Loading…";
-  try {
-    const pv = await api("/api/test-thread", {method: "POST", body: {config: config(), url, title, profile: profileFromForm()}});
-    renderPreview(pv);
-  } catch (e) { $("pvText").textContent = "Error: " + e.message; }
+  $("pvText").textContent = "⏳ Loading…";
+  try { renderPreview(await api("/api/test-thread", {method: "POST", body: {config: config(), url, title, profile: profileFromForm()}})); }
+  catch (e) { $("pvText").textContent = "Error: " + e.message; }
 }
 
-function renderJob(st) {
-  const s = st.status;
-  const running = st.running;
-  $("btnPause").disabled = !(running && s === "running");
-  $("btnResume").disabled = !(s === "paused" || (!running && !["completed"].includes(s)));
-  $("btnStop").disabled = !running;
-  $("btnRetry").disabled = running || !st.threads_failed;
-  $("btnExport").disabled = $("btnExportCsv").disabled = false;
-  const cls = {completed: "ok", running: "ok", paused: "warn", awaiting_confirmation: "warn", error: "bad", blocked: "bad"}[s] || "muted";
-  show($("jobMsg"), `Job <b>${esc(st.id)}</b> · <span class="${cls}">${esc(s)}</span>${st.platform ? " · " + esc(st.platform) : ""}${st.message ? " · " + esc(st.message) : ""}`);
-  const avg = st.avg_confidence == null ? "–" : (st.avg_confidence * 100).toFixed(0) + "%";
-  const last = st.last_confidence == null ? "–" : (st.last_confidence * 100).toFixed(0) + "%";
+// ---------------------------------------------------------------- jobs list
+function jobProgress(j) {
+  if (j.max_pages && j.current_page_number) return Math.min(100, Math.round((j.listing_pages_done ?? 0) / j.max_pages * 100));
+  return null;
+}
+function jobButtons(j) {
+  const b = [];
+  if (j.running && j.status === "running") b.push(`<button class="small" data-act="pause" data-id="${j.id}">⏸ Pause</button>`);
+  if (j.running && j.status === "paused") b.push(`<button class="small" data-act="resume" data-id="${j.id}">▶ Resume</button>`);
+  if (j.running) b.push(`<button class="small danger" data-act="stop" data-id="${j.id}">■ Cancel</button>`);
+  if (!j.running && j.status !== "completed") b.push(`<button class="small" data-act="resume" data-id="${j.id}">▶ Continue</button>`);
+  if (!j.running && j.failed) b.push(`<button class="small" data-act="retry" data-id="${j.id}">↻ Retry ${j.failed} failed</button>`);
+  b.push(`<button class="small danger" data-act="delete" data-id="${j.id}">🗑 Delete</button>`);
+  return b.join("");
+}
+function renderJobs(jobs) {
+  lastJobs = jobs;
+  if (!jobs.length) { $("jobsList").innerHTML = `<p class="muted">No jobs yet. Paste a URL above and press <b>Start collecting</b>.</p>`; return; }
+  $("jobsList").innerHTML = jobs.map(j => {
+    const act = j.running ? (j.activity || "Working…") : (j.message || "");
+    const prog = jobProgress(j);
+    const bar = j.running ? (prog != null ? `<div class="bar"><i style="width:${prog}%"></i></div>` : `<div class="bar indet"><i></i></div>`) : "";
+    return `<div class="job ${j.id === selectedJob ? "sel" : ""}" data-select="${j.id}">
+      <div class="top"><div><div class="url">${esc(j.start_url)}</div>
+        <div class="act">${pill(j.status)} ${j.platform ? esc(j.platform) + " · " : ""}${esc(act)}</div></div>
+        <div class="btns">${jobButtons(j)}</div></div>
+      ${bar}
+      <div class="nums"><span>Saved <b>${j.done}</b></span><span>Found <b>${j.discovered}</b></span><span>Failed <b>${j.failed}</b></span>
+        <span>Duplicates <b>${j.duplicate}</b></span><span>Skipped <b>${j.skipped}</b></span>
+        <span>Listing page <b>${j.current_page_number ?? "–"}</b>${j.max_pages ? " of " + j.max_pages : ""}</span>
+        <span class="muted">started ${esc((j.created_at || "").replace("T", " ").slice(0, 16))}</span></div>
+    </div>`;
+  }).join("");
+}
+async function loadJobs() { try { renderJobs(await api("/api/jobs")); } catch (e) {} }
+
+// ---------------------------------------------------------------- job details
+const ICON = {extracted: ["✔", "ok"], extraction_failed: ["✖", "bad"], duplicate: ["≡", "muted"], skipped: ["↷", "warn"],
+  listing_page: ["📄", ""], platform: ["🔎", ""], end: ["🏁", "ok"], job_start: ["▶", ""], blocked: ["⛔", "bad"],
+  network_error: ["⚠", "bad"], crash: ["⚠", "bad"], pagination_unknown: ["?", "warn"], profile_learned: ["🧠", ""],
+  resume: ["▶", ""], max_pages: ["🏁", "ok"], retry: ["↻", ""], loop: ["⚠", "warn"]};
+function renderDetail(st) {
+  $("detailCard").classList.remove("hidden");
+  $("dTitle").textContent = "– " + st.start_url;
+  const prog = st.page_progress && st.page_progress.total ? Math.round(st.page_progress.done / st.page_progress.total * 100) : null;
+  $("dStatus").innerHTML = `${pill(st.status)} ${st.platform ? esc(st.platform) : ""}
+    <div style="margin-top:6px;font-size:15px">${st.running ? "⏳ " + esc(st.activity || "Working…") : esc(st.message || "")}</div>
+    ${st.running && prog != null ? `<div class="bar"><i style="width:${prog}%"></i></div><div class="muted" style="font-size:12px">This listing page: ${st.page_progress.done} of ${st.page_progress.total} threads</div>` : ""}`;
+  const avg = st.avg_confidence == null ? "–" : Math.round(st.avg_confidence * 100) + "%";
   $("jobStats").innerHTML = [
-    ["Current listing page", st.current_page_number ?? "–"], ["Listing pages done", st.listing_pages_done],
-    ["Threads discovered", st.threads_discovered], ["Threads completed", st.threads_completed],
-    ["Threads skipped", st.threads_skipped], ["Failed extractions", st.threads_failed],
-    ["Duplicate threads", st.threads_duplicate], ["Extraction confidence (last / avg)", `${last} / ${avg}`],
-  ].map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join("") +
-    `<div class="stat" style="grid-column:1/-1"><span>Current output file</span><div>${esc(st.current_output_file || "–")}</div></div>`;
+    ["Listing page now", st.current_page_number ?? "–"], ["Listing pages done", st.listing_pages_done + (st.max_pages ? " / " + st.max_pages : "")],
+    ["Posts saved", st.threads_completed], ["Threads found", st.threads_discovered], ["Failed", st.threads_failed],
+    ["Duplicates", st.threads_duplicate], ["Skipped", st.threads_skipped], ["Avg. confidence", avg],
+    ["Running for", fmtDur(st.elapsed_seconds)], ["Speed", st.threads_per_minute ? st.threads_per_minute + " / min" : "–"],
+  ].map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join("");
+  $("feed").innerHTML = (st.recent_events || []).map(e => {
+    const [ic, cls] = ICON[e.event] || (e.level === "error" ? ["✖", "bad"] : e.level === "warn" ? ["⚠", "warn"] : ["•", "muted"]);
+    return `<li><span class="t">${esc(e.ts.slice(11, 19))}</span><span class="ico ${cls}">${ic}</span><span>${esc(e.message)}</span></li>`;
+  }).join("") || `<li class="muted">Nothing yet…</li>`;
   const files = st.output_files || [];
-  $("filesBox").classList.toggle("hidden", !files.length);
-  $("filesList").innerHTML = files.map((f, i) => {
+  $("filesList").innerHTML = files.length ? files.map((f, i) => {
     const name = f.split(/[\\/]/).pop();
     const open = st.running && i === files.length - 1;
-    return `<div><a href="/api/jobs/${encodeURIComponent(st.id)}/files/${i}" download="${esc(name)}">${esc(name)}</a>${open ? ' <span class="muted">(still being filled)</span>' : ""}</div>`;
-  }).join("");
+    return `<div>📄 <a href="/api/jobs/${encodeURIComponent(st.id)}/files/${i}" download="${esc(name)}">${esc(name)}</a>${open ? ' <span class="muted">(being written)</span>' : ""}</div>`;
+  }).join("") + `<div class="muted" style="font-size:12px;margin-top:4px">Saved in ${esc(st.output_dir)}</div>` : `<span class="muted">No files yet.</span>`;
   $("errTable").querySelector("tbody").innerHTML = (st.recent_errors || []).map(e =>
-    `<tr><td class="muted" style="white-space:nowrap">${esc(e.ts.slice(11, 19))}</td><td>${esc(e.message)}</td></tr>`).join("") || `<tr><td class="muted">none</td></tr>`;
+    `<tr><td class="nowrap muted">${esc(e.ts.slice(11, 19))}</td><td>${esc(e.message)}</td></tr>`).join("") || `<tr><td class="muted">None 👍</td></tr>`;
   const pc = st.pending_confirmation;
-  if (pc && s === "awaiting_confirmation") {
-    show($("confirmBox"), `<b class="warn">Pagination could not be identified on</b> ${esc(pc.page_url)}.<br>Choose the next listing page or end the job:<br>` +
-      pc.candidates.slice(0, 15).map(c => `<div><button data-confirm="${esc(c.url)}">Use</button> <a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.url)}</a> <span class="muted">${esc(c.text)} – ${esc(c.reason)}</span></div>`).join("") +
-      `<div style="margin-top:6px"><input id="manualNext" type="text" placeholder="or paste the next page URL" style="width:60%"> <button data-confirm-manual="1">Use URL</button> <button data-confirm="">This was the last page</button></div>`);
+  if (pc && st.status === "awaiting_confirmation") {
+    banner($("confirmBox"), `<b>The next page could not be found automatically</b> on ${esc(pc.page_url)}. Pick the next page or end the job:<br>` +
+      pc.candidates.slice(0, 12).map(c => `<div style="margin-top:4px"><button class="small" data-confirm="${esc(c.url)}">Use</button> <a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.url)}</a> <span class="muted">${esc(c.text)}</span></div>`).join("") +
+      `<div style="margin-top:8px" class="row"><div class="grow"><input id="manualNext" type="text" placeholder="…or paste the next page URL"></div><button class="small" data-confirm-manual="1">Use this URL</button><button class="small" data-confirm="">That was the last page</button></div>`, "warnb");
   } else $("confirmBox").classList.add("hidden");
 }
-
-async function poll() {
-  if (!currentJob) return;
+async function pollDetail() {
+  if (!selectedJob) return;
   try {
-    const st = await api(`/api/jobs/${currentJob}`);
-    renderJob(st);
-    const out = await api(`/api/jobs/${currentJob}/output-preview?chars=5000`);
+    renderDetail(await api(`/api/jobs/${selectedJob}`));
+    const out = await api(`/api/jobs/${selectedJob}/output-preview?chars=5000`);
     $("outFile").textContent = out.file ? "– " + out.file.split(/[\\/]/).pop() : "";
     $("outTail").textContent = out.text || "";
-    if (!st.running) { clearInterval(pollTimer); pollTimer = null; loadJobs(); }
-  } catch (e) { /* transient */ }
+  } catch (e) { if (String(e.message).includes("unknown job")) { selectedJob = null; $("detailCard").classList.add("hidden"); } }
 }
-function watch(jobId) {
-  currentJob = jobId;
-  if (pollTimer) clearInterval(pollTimer);
-  pollTimer = setInterval(poll, 1500);
-  poll();
-}
-async function jobAction(action, body={}) {
-  if (!currentJob) return;
-  try { renderJob(await api(`/api/jobs/${currentJob}/${action}`, {method: "POST", body})); watch(currentJob); }
-  catch (e) { show($("jobMsg"), `<span class="bad">${esc(e.message)}</span>`); }
-}
-async function loadJobs() {
-  const jobs = await api("/api/jobs");
-  $("jobsTable").querySelector("tbody").innerHTML = jobs.map(j =>
-    `<tr><td><a href="#" data-job="${esc(j.id)}">${esc(j.id)}</a></td><td>${esc(j.status)}${j.running ? " ●" : ""}</td><td>${j.done}</td><td>${j.failed}</td>
-     <td>${esc(j.start_url)}</td><td><button data-job="${esc(j.id)}">View</button></td></tr>`).join("") || `<tr><td colspan="6" class="muted">No jobs yet</td></tr>`;
+function select(id) { selectedJob = id; renderJobs(lastJobs); pollDetail(); }
+async function jobAction(act, id) {
+  try {
+    if (act === "delete") {
+      const j = lastJobs.find(x => x.id === id);
+      if (!confirm(`Delete this job${j && j.running ? " (it will be cancelled first)" : ""}?\n${j ? j.start_url : id}`)) return;
+      const files = confirm("Also delete its text files from the output folder?\n\nOK = delete the files too\nCancel = keep the files");
+      await api(`/api/jobs/${id}?files=${files}`, {method: "DELETE"});
+      if (selectedJob === id) { selectedJob = null; $("detailCard").classList.add("hidden"); }
+    } else if (act === "stop") {
+      if (!confirm("Cancel this job? Everything saved so far is kept, and you can continue it later.")) return;
+      await api(`/api/jobs/${id}/stop`, {method: "POST"});
+    } else await api(`/api/jobs/${id}/${act}`, {method: "POST"});
+    if (act !== "delete") select(id);
+  } catch (e) { alert(e.message); }
+  loadJobs();
 }
 
-document.addEventListener("click", async ev => {
-  const t = ev.target;
-  if (t.dataset.test) { testThread(t.dataset.test, t.dataset.title); }
-  if (t.dataset.job) { ev.preventDefault(); watch(t.dataset.job); }
-  if (t.dataset.confirm !== undefined) jobAction("confirm", {url: t.dataset.confirm || null});
-  if (t.dataset.confirmManual) jobAction("confirm", {url: $("manualNext").value.trim() || null});
+// ---------------------------------------------------------------- events
+document.addEventListener("click", ev => {
+  const t = ev.target.closest("button, [data-select]");
+  if (!t) return;
+  if (t.dataset.act) { ev.stopPropagation(); jobAction(t.dataset.act, t.dataset.id); return; }
+  if (t.dataset.test) { testThread(t.dataset.test, t.dataset.title); return; }
+  if (t.dataset.confirm !== undefined) { api(`/api/jobs/${selectedJob}/confirm`, {method: "POST", body: {url: t.dataset.confirm || null}}).then(pollDetail); return; }
+  if (t.dataset.confirmManual) { api(`/api/jobs/${selectedJob}/confirm`, {method: "POST", body: {url: $("manualNext").value.trim() || null}}).then(pollDetail); return; }
+  if (t.dataset.select && t.tagName !== "BUTTON") select(t.dataset.select);
 });
+$("url").addEventListener("input", updateHint);
+$("respect_robots").addEventListener("change", updateHint);
 $("btnAnalyze").onclick = () => analyze(false);
 $("btnTest").onclick = () => testThread($("testUrl").value.trim());
 $("btnRetest").onclick = () => { const u = $("testUrl").value.trim(); if (u) testThread(u); else analyze(true); };
 $("btnSaveProfile").onclick = async () => {
-  const dom = $("profDomain").textContent;
-  if (!dom) return;
+  const dom = $("profDomain").textContent; if (!dom) return;
   try { const p = await api(`/api/profiles/${encodeURIComponent(dom)}`, {method: "PUT", body: profileFromForm()});
-        fillProfile(p, p); show($("profMsg"), `<span class="ok">Saved profile for ${esc(dom)}.</span> It will be used for all jobs on this forum.`); }
-  catch (e) { show($("profMsg"), `<span class="bad">${esc(e.message)}</span>`); }
+        fillProfile(p, p); banner($("profMsg"), `✔ Saved. These selectors will be used for ${esc(dom)} from now on.`, "okb"); }
+  catch (e) { banner($("profMsg"), esc(e.message), "badb"); }
 };
 $("btnDeleteProfile").onclick = async () => {
-  const dom = $("profDomain").textContent;
-  if (!dom) return;
+  const dom = $("profDomain").textContent; if (!dom) return;
   await api(`/api/profiles/${encodeURIComponent(dom)}`, {method: "DELETE"});
-  show($("profMsg"), "Saved profile deleted; automatic detection will be used.");
+  banner($("profMsg"), "Saved selectors deleted – automatic detection will be used.", "info");
 };
 $("btnStart").onclick = async () => {
   const cfg = config();
-  if (!cfg.start_url) { show($("jobMsg"), "Enter a starting URL first.", "bad"); return; }
+  if (!cfg.start_url) { banner($("setupMsg"), "Paste a URL first.", "badb"); return; }
+  $("btnStart").disabled = true;
   try {
     const r = await api("/api/jobs", {method: "POST", body: {config: cfg, resume_previous: $("resume_previous").checked}});
-    show($("jobMsg"), r.resumed ? "Resuming previous session…" : "Job started…");
-    watch(r.job_id); loadJobs();
-  } catch (e) { show($("jobMsg"), `<span class="bad">${esc(e.message)}</span>`); }
+    banner($("setupMsg"), r.resumed ? "▶ Continuing your earlier job for this URL – see it under <b>3. Jobs</b>." : "▶ Job started – follow it under <b>3. Jobs</b>.", "okb");
+    await loadJobs(); select(r.job_id);
+    $("detailCard").scrollIntoView({behavior: "smooth", block: "start"});
+  } catch (e) { banner($("setupMsg"), `✖ ${esc(e.message)}`, "badb"); }
+  finally { $("btnStart").disabled = false; }
 };
-$("btnPause").onclick = () => jobAction("pause");
-$("btnResume").onclick = () => jobAction("resume");
-$("btnStop").onclick = () => jobAction("stop");
-$("btnRetry").onclick = () => jobAction("retry");
-$("btnExport").onclick = () => currentJob && (location.href = `/api/jobs/${currentJob}/log?format=jsonl`);
-$("btnExportCsv").onclick = () => currentJob && (location.href = `/api/jobs/${currentJob}/log?format=csv`);
+$("btnExport").onclick = () => selectedJob && (location.href = `/api/jobs/${selectedJob}/log?format=jsonl`);
+$("btnExportCsv").onclick = () => selectedJob && (location.href = `/api/jobs/${selectedJob}/log?format=csv`);
 $("btnOpenFolder").onclick = async () => {
   const r = await api("/api/open-folder", {method: "POST", body: {path: $("output_dir").value}});
-  show($("setupMsg"), r.opened ? `Opened ${esc(r.path)}` : `Output folder: <b>${esc(r.path)}</b> (could not open a file manager: ${esc(r.error || "")})`);
+  banner($("setupMsg"), r.opened ? `Opened ${esc(r.path)}` : `Output folder: <b>${esc(r.path)}</b>`, "info");
 };
 $("btnBrowse").onclick = async () => {
   const r = await api("/api/choose-folder", {method: "POST", body: {path: $("output_dir").value}});
   if (r.path) $("output_dir").value = r.path;
-  else show($("setupMsg"), "No folder picker available here – type the folder path instead.");
+  else banner($("setupMsg"), "No folder picker available – type the folder path instead.", "info");
 };
 (async () => {
   const d = await api("/api/defaults");
   $("output_dir").value = d.config.output_dir;
-  loadJobs();
+  await loadJobs();
+  const running = lastJobs.find(j => j.running);
+  if (running) select(running.id);
+  setInterval(loadJobs, 2000);
+  setInterval(pollDetail, 1500);
 })();
 </script>
 </body>

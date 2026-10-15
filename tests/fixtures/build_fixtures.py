@@ -992,6 +992,86 @@ def misc():
 <h1>About us</h1><p>We are a small company.</p></body></html>""")
 
 
+# =========================================================================== Reddit (old.reddit.com markup)
+REDDIT_TITLE_ONLY = {"id": 77, "title": "Is cold turkey better than tapering?", "slug": "is_cold_turkey_better_than_tapering",
+                     "author": "Asker_77", "replies": []}
+
+
+def reddit():
+    base = "/reddit/r/NoFap/"
+
+    def page_url(p):
+        return base if p == 1 else f"{base}?count={(p - 1) * 25}&after=t3_r{PAGES[p - 1][-1]}"
+
+    def tl(t):
+        return f"{base}comments/r{t['id']}/{t['slug'].replace('-', '_')}/"
+
+    def q(author, text):
+        return f"<blockquote>{text}</blockquote>"
+
+    def shell(cls, title, content):
+        return f"""<!doctype html><html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head><title>{esc(title)}</title><meta property="og:site_name" content="reddit"></head>
+<body class="{cls}">
+<div id="header" role="banner"><a href="https://www.reddit.com/" id="header-img" class="default-header">reddit.com</a>
+<span class="hover pagename redditname"><a href="{base}">NoFap</a></span>
+<ul class="tabmenu"><li class="selected"><a href="{base}" class="choice">hot</a></li><li><a href="{base}new/" class="choice">new</a></li></ul>
+<div id="header-bottom-right"><a href="https://old.reddit.com/login" class="login-required">log in or sign up</a></div></div>
+<div class="side"><div class="spacer"><div class="titlebox"><h1 class="hover redditname"><a href="{base}">NoFap</a></h1>
+<div class="usertext-body"><div class="md"><p>Community rules and resources in the sidebar.</p></div></div></div></div></div>
+<div class="content" role="main">{content}</div>
+<div class="footer-parent"><div class="footer rounded"><ul class="hover"><li><a href="https://www.reddit.com/blog/" class="choice">blog</a></li><li><a href="https://www.reddit.com/help/" class="choice">help</a></li></ul></div></div>
+</body></html>"""
+
+    def thing(t, rank, kind="self", promoted=False, href=None):
+        cls = f" thing id-t3_r{t['id']} {'odd' if rank % 2 else 'even'} link {'self' if kind == 'self' else ''}{' promoted' if promoted else ''}"
+        href = href or tl(t)
+        domain = "self.NoFap" if kind == "self" else "i.redd.it"
+        return f"""<div class="{cls}" id="thing_t3_r{t['id']}" data-fullname="t3_r{t['id']}" data-type="link" data-author="{t['author']}" data-subreddit="NoFap" data-permalink="{tl(t)}" data-domain="{domain}" data-promoted="{'true' if promoted else 'false'}" data-nsfw="false" data-comments-count="{len(t['replies'])}">
+<p class="parent"></p><span class="rank">{rank}</span>
+<div class="midcol unvoted"><div class="arrow up login-required access-required" role="button" aria-label="upvote" tabindex="0"></div><div class="score unvoted" title="12">12</div><div class="arrow down login-required access-required" role="button" aria-label="downvote" tabindex="0"></div></div>
+<div class="entry unvoted"><div class="top-matter"><p class="title"><a class="title may-blank " data-event-action="title" href="{href}" tabindex="1">{esc(t['title'])}</a> <span class="domain">(<a href="{base}">{domain}</a>)</span></p>
+<p class="tagline">submitted <time title="Mon Jan 1 10:00:00 2024 UTC" datetime="2024-01-01T10:00:00+00:00" class="live-timestamp">3 hours ago</time> by <a href="https://old.reddit.com/user/{t['author']}" class="author may-blank">{t['author']}</a></p>
+<ul class="flat-list buttons"><li class="first"><a href="{tl(t)}" data-event-action="comments" class="bylink comments may-blank" rel="nofollow">{len(t['replies'])} comments</a></li><li class="share"><a class="post-sharing-button" href="javascript: void 0;">share</a></li></ul></div>
+<div class="expando expando-uninitialized" style="display: none"><span class="error">loading...</span></div></div>
+<div class="child"></div><div class="clearleft"></div></div><div class="clearleft"></div>"""
+
+    image_post = {"id": 88, "title": "Look at my 90 day progress chart", "slug": "chart", "author": "Img_Poster", "replies": []}
+    ad = {"id": 99, "title": "Download our premium habit app today", "slug": "ad", "author": "AdvertiserCo", "replies": []}
+    for p, ids in PAGES.items():
+        things = [thing(BY_ID[i], k + 1) for k, i in enumerate(ids)]
+        things.insert(1, thing(ad, 0, promoted=True))
+        things.insert(3, thing(image_post, 2, kind="image", href="https://i.redd.it/abc123.jpg"))
+        if p == 2:
+            things.append(thing(REDDIT_TITLE_ONLY, 9))
+        prev = f'<span class="prev-button"><a href="{page_url(p - 1)}" rel="nofollow prev">&lsaquo; prev</a></span>' if p > 1 else ""
+        nxt = f'<span class="next-button"><a href="{page_url(p + 1)}" rel="nofollow next">next &rsaquo;</a></span>' if p < LAST_PAGE else ""
+        content = (f'<div class="spacer"><div id="siteTable" class="sitetable linklisting">{"".join(things)}'
+                   f'<div class="nav-buttons"><span class="nextprev">view more:&#32;{prev}<span class="separator"></span>{nxt}</span></div></div></div>')
+        add(page_url(p), f"reddit/listing_p{p}.html", shell("listing-page hot-page", "NoFap", content))
+
+    def comment(author, body, cid):
+        return f"""<div class=" thing id-t1_{cid} noncollapsed comment" id="thing_t1_{cid}" data-fullname="t1_{cid}" data-type="comment" data-author="{author}">
+<p class="parent"><a name="{cid}"></a></p><div class="midcol unvoted"></div>
+<div class="entry unvoted"><p class="tagline"><a href="https://old.reddit.com/user/{author}" class="author may-blank">{author}</a> <span class="score unvoted" title="3">3 points</span> <time class="live-timestamp">2 hours ago</time></p>
+<form action="#" class="usertext warn-on-unload" id="form-t1_{cid}"><input type="hidden" name="thing_id" value="t1_{cid}"/><div class="usertext-body may-blank-within md-container "><div class="md">{body}</div></div></form>
+<ul class="flat-list buttons"><li class="first"><a href="#" class="bylink" rel="nofollow">permalink</a></li><li><a href="javascript:void(0)" class="reply-button">reply</a></li></ul></div>
+<div class="child"></div><div class="clearleft"></div></div>"""
+
+    for t in list(THREADS) + [REDDIT_TITLE_ONLY]:
+        body = body_html(t, "p", q) if t.get("blocks") else ""
+        expando = (f'<div class="expando"><form action="#" class="usertext warn-on-unload" id="form-t3_r{t["id"]}">'
+                   f'<input type="hidden" name="thing_id" value="t3_r{t["id"]}"/><div class="usertext-body may-blank-within md-container ">'
+                   f'<div class="md">{body}</div></div></form></div>') if body else ""
+        link = thing(t, 1).replace('<div class="expando expando-uninitialized" style="display: none"><span class="error">loading...</span></div>', expando)
+        comments = "".join(comment("Helper_A", reply_body(t, k, "p", q), f"c{t['id']}{k}") for k in range(len(t["replies"])))
+        content = (f'<div id="siteTable" class="sitetable linklisting">{link}</div>'
+                   f'<div class="commentarea"><div class="panestack-title"><span class="title">all {len(t["replies"])} comments</span></div>'
+                   f'<div class="menuarea"><span class="dropdown-title lightdrop">sorted by: best</span></div>'
+                   f'<div id="siteTable_t3_r{t["id"]}" class="sitetable nestedlisting">{comments}</div></div>')
+        add(tl(t), f"reddit/thread_{t['id']}.html", shell("comments-page", t["title"], content))
+
+
 def ambiguous():
     """A listing whose only pagination is an unlabeled 'More topics' link: the job must ask the user."""
     def page(ids, more):
@@ -1011,7 +1091,7 @@ def build() -> None:
         shutil.rmtree(ROOT)
     ROOT.mkdir(parents=True)
     ROUTES.clear()
-    for fn in (xf2, xf1, phpbb, vbulletin, discourse, nodebb, flarum, vanilla, oldboard, community, spa, misc, ambiguous):
+    for fn in (xf2, xf1, phpbb, vbulletin, discourse, nodebb, flarum, vanilla, oldboard, community, spa, misc, ambiguous, reddit):
         fn()
     (ROOT / "routes.json").write_text(json.dumps(ROUTES, indent=1, sort_keys=True), encoding="utf-8")
 

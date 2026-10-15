@@ -163,6 +163,13 @@ class Database:
                          "WHERE status IN ('running','paused','awaiting_confirmation')")
         return cur.rowcount
 
+    def delete_job(self, job_id: str) -> None:
+        with self._lock:
+            for table in ("threads", "pages", "batches", "events"):
+                self.conn.execute(f"DELETE FROM {table} WHERE job_id=?", (job_id,))
+            self.conn.execute("DELETE FROM jobs WHERE id=?", (job_id,))
+            self.conn.commit()
+
     # ------------------------------------------------------------------ pages
     def upsert_page(self, job_id: str, seq: int, url: str, page_number: int | None, status: str, **extra) -> None:
         existing = self._one("SELECT id FROM pages WHERE job_id=? AND seq=?", (job_id, seq))

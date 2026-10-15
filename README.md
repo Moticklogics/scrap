@@ -61,6 +61,23 @@ the next page, paste one, or tell it this was the last page.
 With **Resume previous session** ticked, pressing Start on a URL and output folder that already have
 an unfinished job continues that job instead of starting over.
 
+## Reddit
+
+Paste a subreddit URL such as `https://www.reddit.com/r/NoFap/new/`. Reddit is read through
+`old.reddit.com`, which has real "next" pages of 25 posts instead of endless scrolling; `www`, `new`
+and `m` reddit links are converted automatically. For every **text post** the record holds the title
+(`THREAD TITLE`) and the post body, which is the question (`ORIGINAL POST`). Comments, image and link
+posts, and ads are skipped. A post with only a title is saved with
+`(this post has no body text - title only)`.
+
+Things to know:
+* Reddit lists only about 1,000 posts per listing (for example `/new/` or `/top/?t=all`), so a
+  single subreddit URL can't reach further back than that.
+* Reddit's robots.txt asks automated tools not to crawl. With **Respect robots.txt** ticked (the
+  default), the job stops with a message. Untick it only if your use is allowed by Reddit's terms.
+* Use a delay of 2 seconds or more. If Reddit shows a "blocked by network security" page, the job
+  stops, and the app does not try to get around it. Private and 18+ communities are not accessed.
+
 ## Command line
 
 ```bash
@@ -113,7 +130,7 @@ See `samples/` for real output produced from the test fixtures.
 | Module | Responsibility |
 |---|---|
 | `browser.py` | Playwright/Chromium, timeouts, retries with exponential backoff (429/5xx/network), browser-crash restart, global rate limiter, robots.txt |
-| `detection.py` | platform fingerprinting, page-type classification (listing, thread, blocked), CAPTCHA/login detection |
+| `detection.py` | platform fingerprinting (including Reddit), page-type classification (listing, thread, blocked), CAPTCHA/login detection |
 | `platforms.py` | data-only signatures and selectors for XenForo 1/2, phpBB, vBulletin, Discourse, NodeBB, Flarum and Vanilla |
 | `listing.py` | thread-link discovery: profile, then platform selectors, then generic grouping of repeated links by DOM position and URL shape |
 | `pagination.py` | next page discovery (profile, platform, `rel=next`, "Next"-style controls in many languages, numbered pagination, `?page=` inference for infinite-scroll platforms), current-page and last-page detection, loop prevention |

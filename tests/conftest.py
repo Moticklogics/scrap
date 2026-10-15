@@ -28,10 +28,11 @@ LISTING_START = {
     "oldboard": "/oldboard/forum.php?cat=3",
     "community": "/community/",
     "spa": "/spa/board?p=1",
+    "reddit": "/reddit/r/NoFap/",
 }
 PLATFORM_OF = {"xenforo2": "xenforo2", "xenforo1": "xenforo1", "phpbb": "phpbb", "vbulletin": "vbulletin",
                "discourse": "discourse", "nodebb": "nodebb", "flarum": "flarum", "vanilla": "vanilla",
-               "oldboard": None, "community": None, "spa": None}
+               "oldboard": None, "community": None, "spa": None, "reddit": "reddit"}
 STATIC_SITES = [s for s in LISTING_START if s != "spa"]  # spa needs JavaScript
 
 
@@ -48,7 +49,7 @@ def routes_for(site: str, kind: str) -> list[str]:
         f = info["file"]
         if f.startswith("misc/"):
             continue
-        is_listing = any(k in f for k in ("forum_p", "category_p", "tag_p", "cat_p", "list_p", "board_p"))
+        is_listing = any(k in f for k in ("forum_p", "category_p", "tag_p", "cat_p", "list_p", "board_p", "listing_p"))
         if (kind == "listing") == is_listing:
             out.append(r)
     return sorted(out)

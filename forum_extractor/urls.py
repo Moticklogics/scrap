@@ -24,6 +24,24 @@ _THREAD_SUFFIXES = [
 ]
 
 
+_REDDIT_HOSTS = {"reddit.com", "www.reddit.com", "new.reddit.com", "np.reddit.com", "m.reddit.com",
+                 "sh.reddit.com", "i.reddit.com"}
+
+
+def to_old_reddit(url: str) -> str:
+    """Reddit's server-rendered interface (old.reddit.com) has real pagination; the new one scrolls forever."""
+    parts = urlsplit(url)
+    host = (parts.hostname or "").lower()
+    if host in _REDDIT_HOSTS:
+        return urlunsplit((parts.scheme or "https", "old.reddit.com", parts.path, parts.query, parts.fragment))
+    return url
+
+
+def is_reddit(url: str) -> bool:
+    host = (urlsplit(url).hostname or "").lower()
+    return host == "reddit.com" or host.endswith(".reddit.com")
+
+
 def absolutize(href: str, base_url: str) -> str | None:
     href = (href or "").strip()
     if not href or href.startswith(("javascript:", "mailto:", "tel:", "data:")):
@@ -128,7 +146,7 @@ def thread_key(url: str) -> str:
     m = _XF_THREAD.search(parts.path + "?" + parts.query)
     if m:
         return f"{host}|xf-thread|{m.group(1)}"
-    for rx, name in ((r"/t/[^/]+/(\d+)", "discourse"), (r"/topic/(\d+)", "nodebb"),
+    for rx, name in ((r"/comments/([a-z0-9]+)", "reddit"), (r"/t/[^/]+/(\d+)", "discourse"), (r"/topic/(\d+)", "nodebb"),
                      (r"/d/(\d+)", "flarum"), (r"/discussion/(\d+)", "vanilla")):
         m = re.search(rx, parts.path)
         if m:
@@ -170,7 +188,7 @@ _PAGE_PATTERNS = [
     re.compile(r"/page[-/]?\d+/?$", re.I),
     re.compile(r"/p\d+/?$", re.I),
 ]
-_PAGE_PARAMS = {"page", "pg", "p", "start", "offset", "pagenumber", "pagenum"}
+_PAGE_PARAMS = {"page", "pg", "p", "start", "offset", "pagenumber", "pagenum", "count", "after", "before", "cursor"}
 
 
 def listing_base(url: str) -> str:

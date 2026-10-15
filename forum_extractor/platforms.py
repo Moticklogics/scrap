@@ -33,7 +33,13 @@ class PlatformSpec:
     quote_exclude: list[str] = field(default_factory=list)
     # (query parameter, index of the first page) for infinite-scroll listings that accept ?page=N
     page_param: tuple[str, int] | None = None
+    # posts may legitimately have no body text (e.g. Reddit title-only posts); record them instead of failing
+    allow_empty_body: bool = False
+    # listing URLs carry no page number (cursor pagination): number pages 1, 2, 3 ... in crawl order
+    sequential_pages: bool = False
 
+
+EMPTY_BODY_TEXT = "(this post has no body text - title only)"
 
 PLATFORMS: list[PlatformSpec] = [
     PlatformSpec(
@@ -204,6 +210,30 @@ PLATFORMS: list[PlatformSpec] = [
         quote_exclude=["blockquote.Quote", "blockquote.UserQuote", ".UserQuote", "blockquote"],
     ),
 ]
+
+PLATFORMS.append(PlatformSpec(
+    # Reddit is read through old.reddit.com (server-rendered, real "next" links, 25 posts per page);
+    # www/new reddit URLs are rewritten automatically. Only text ("self") posts are collected: the
+    # post title and its body (the question). Comments are ignored, ads (promoted) are skipped.
+    name="reddit",
+    label="Reddit",
+    signals=[
+        Signal("url", r"(^https?://|\.)reddit\.com/", 4), Signal("css", "#siteTable", 2),
+        Signal("css", "div.thing[data-fullname^='t3_']", 3), Signal("css", "body.listing-page, body.comments-page", 1),
+        Signal("html", r"reddit", 1),
+    ],
+    listing_markers=["body.listing-page #siteTable"],
+    thread_markers=["body.comments-page", ".commentarea"],
+    thread_links=["#siteTable > div.thing.link.self:not(.promoted):not([data-promoted='true']) a.title"],
+    next_page=["span.next-button a", "a[rel~='next']"],
+    post_containers=["div.thing.link, .commentarea div.thing.comment"],
+    first_post=["#siteTable > div.thing.link"],
+    post_body=[".expando .usertext-body .md", ".usertext-body .md"],
+    exclude=[".usertext-edit", ".md-container .bottom-area"],
+    quote_exclude=["blockquote"],
+    allow_empty_body=True,
+    sequential_pages=True,
+))
 
 PLATFORMS_BY_NAME = {p.name: p for p in PLATFORMS}
 

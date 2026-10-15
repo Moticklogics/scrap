@@ -146,6 +146,8 @@ def _per_page_from_links(soup: BeautifulSoup, url: str) -> int | None:
 
 
 def infer_page_number(soup: BeautifulSoup, url: str, spec: PlatformSpec | None = None) -> int | None:
+    if spec and spec.sequential_pages:
+        return None  # cursor-based pagination: the engine numbers pages in crawl order
     n = _current_from_dom(soup, spec)
     if n is not None:
         return n
@@ -289,6 +291,11 @@ def discover_pagination(
         return res
 
     # Nothing found: decide between "last page", "inferred" and "ask the user".
+    if spec and spec.sequential_pages:
+        res.is_last = True
+        res.method = f"last page ({spec.label}: no next link)"
+        res.confidence = 0.85
+        return res
     if numbered and current is not None and current >= max(numbered):
         res.is_last = True
         res.method = "last page (numbered pagination)"

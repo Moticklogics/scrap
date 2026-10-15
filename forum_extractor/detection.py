@@ -19,6 +19,8 @@ CAPTCHA_MARKERS = [
      "Cloudflare challenge"),
     (re.compile(r"g-recaptcha|recaptcha/api\.js|hcaptcha\.com|h-captcha|turnstile", re.I), "CAPTCHA"),
     (re.compile(r"Access denied|You don't have permission to access|Request blocked", re.I), "access denied"),
+    (re.compile(r"whoa there, pardner|blocked by network security|Your request has been blocked", re.I),
+     "Reddit network block"),
 ]
 # Phrases of a real login wall. Note: "You must log in or register to reply here." (shown under every
 # XenForo thread for guests) is NOT a wall, so the phrases require "view/see/access/read/do that".
@@ -26,10 +28,11 @@ LOGIN_MARKERS = re.compile(
     r"(you must be (logged|signed)[ -]in to (view|see|access|read|do that)|"
     r"you must (log|sign) in( or register)? to (view|see|access|read)|"
     r"please (log|sign) in to (view|continue|read|see|access)|login required|"
-    r"you do not have permission to view this|only (available|visible) to (registered )?members)",
+    r"you do not have permission to view this|only (available|visible) to (registered )?members|"
+    r"are you over eighteen|you must be (at least )?(18|eighteen)|this community is private)",
     re.I,
 )
-HARD_BLOCKS = ("Cloudflare challenge", "CAPTCHA")
+HARD_BLOCKS = ("Cloudflare challenge", "CAPTCHA", "Reddit network block")
 
 
 @dataclass

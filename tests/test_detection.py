@@ -25,7 +25,7 @@ def test_thread_discovery_titles_and_order(site):
         a = analyze_html(fixture_html(route), FAKE_BASE + route, start_url=FAKE_BASE + LISTING_START[site])
         if not a.threads.links:
             continue
-        page = a.page_number
+        page = a.page_number or (routes_for(site, "listing").index(route) + 1)
         expected = [BY_ID[i]["title"] for i in PAGES[page]]
         got = [l.title for l in a.threads.links]
         assert got[: len(expected)] == expected, (route, got)
@@ -39,11 +39,15 @@ def test_pagination_discovery(site):
         if not a.threads.links:
             continue
         p = a.pagination
-        if a.page_number < max(PAGES):
+        number = a.page_number or (routes_for(site, "listing").index(route) + 1)
+        if number < max(PAGES):
             assert p.next_url, route
             nxt = analyze_html(fixture_html(p.next_url[len(FAKE_BASE):]), p.next_url,
                                start_url=FAKE_BASE + LISTING_START[site])
-            assert nxt.page_number == a.page_number + 1, (route, p.next_url)
+            if a.page_number is not None:
+                assert nxt.page_number == a.page_number + 1, (route, p.next_url)
+            else:
+                assert routes_for(site, "listing").index(p.next_url[len(FAKE_BASE):]) == number
         elif not p.inferred:  # Discourse infinite scroll keeps probing ?page=N; verified by the engine
             assert p.next_url is None and p.is_last, route
         assert not p.needs_confirmation

@@ -153,6 +153,8 @@ class BrowserManager:
 
     async def fetch(self, url: str) -> PageSnapshot:
         """Load a page and return its rendered HTML. Retries transient failures with exponential backoff."""
+        from .urls import to_old_reddit
+        url = to_old_reddit(url)
         await self.start()
         attempt = 0
         last_err = ""
@@ -208,7 +210,8 @@ class BrowserManager:
         await asyncio.sleep(delay)
 
     async def robots_allowed(self, url: str, user_agent: str = "*") -> bool:
-        parts = urlsplit(url)
+        from .urls import to_old_reddit
+        parts = urlsplit(to_old_reddit(url))
         origin = f"{parts.scheme}://{parts.netloc}"
         if origin not in self._robots:
             rp: robotparser.RobotFileParser | None = None

@@ -28,7 +28,7 @@ def test_first_post_only_exact_text(site, route):
     assert t["date"] not in res.text
 
 
-@pytest.mark.parametrize("site,route", CASES)
+@pytest.mark.parametrize("site,route", [c for c in CASES if c[0] != "reddit"])
 def test_generic_engine_without_platform_knowledge(site, route):
     """Even with platform detection disabled the generic DOM analysis finds the original post."""
     t = BY_ID[thread_id_of(route)]

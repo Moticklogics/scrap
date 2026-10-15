@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import time
 import logging
 import re
 from dataclasses import dataclass
@@ -58,17 +59,26 @@ class JobRunner:
         self.current_page_number: int | None = None
         self.current_page_url = ""
         self.last_confidence: float | None = None
+        # live progress for the UI
+        self.activity = "Starting…"
+        self.page_total = 0
+        self.page_done = 0
+        self.in_flight: dict[int, str] = {}
+        self.started_monotonic = 0.0
+        self.done_this_run = 0
 
     # ------------------------------------------------------------------ controls
     def pause(self) -> None:
         if self.state == "running":
             self._pause.clear()
             self._set_state("paused", "paused by user")
+            self.activity = "Paused – press Resume to continue"
 
     def resume(self) -> None:
         if self.state == "paused":
             self._pause.set()
             self._set_state("running", "")
+            self.activity = "Resuming…"
 
     def stop(self) -> None:
         self.stop_requested = True
@@ -77,6 +87,7 @@ class JobRunner:
             self._confirm.set_result(None)
         if self.state in ("running", "paused", "awaiting_confirmation"):
             self._set_state("stopping", "stopping after in-flight requests")
+            self.activity = "Stopping – finishing the requests already in progress…"
 
     def confirm_next(self, url: str | None) -> None:
         if self._confirm is not None and not self._confirm.done():
@@ -106,6 +117,9 @@ class JobRunner:
     # ------------------------------------------------------------------ main entry
     async def run(self, mode: str = "crawl") -> None:
         self.stop_requested = False
+        self.started_monotonic = time.monotonic()
+        self.done_this_run = 0
+        self.activity = "Starting the browser…" if mode == "crawl" else "Retrying failed threads…"
         self._set_state("running", "")
         self._log("info", "job_start", f"job {mode} started", start_url=self.cfg.start_url)
         if self.browser is None:
@@ -200,6 +214,8 @@ class JobRunner:
                 raise BlockedError(f"robots.txt disallows {url}")
 
             self.current_page_url = url
+            self.page_total = self.page_done = 0
+            self.activity = f"Opening listing page #{seq + 1}: {url}"
             self.db.update_job(self.job_id, current_page_url=url)
             try:
                 snap = await self.browser.fetch(url)
@@ -250,6 +266,7 @@ class JobRunner:
                 return True
 
             self.db.upsert_page(self.job_id, seq, url, number, "processing", thread_count=len(links))
+            self.activity = f"Listing page {number}: found {len(links)} threads – reading them"
             self._log("info", "listing_page", f"listing page {number}: {len(links)} threads "
                                               f"({analysis.threads.method}, confidence {analysis.threads.confidence:.2f})",
                       url=url, next=analysis.pagination.next_url)
@@ -317,6 +334,7 @@ class JobRunner:
             return None
         self.pending_confirmation = {"page_url": url, "candidates": cands}
         self._confirm = asyncio.get_running_loop().create_future()
+        self.activity = "Waiting for you: choose the next page below"
         self._set_state("awaiting_confirmation", "Pagination could not be identified. Choose the next page link "
                                                  "or end the job.")
         self._log("warn", "pagination_unknown", "waiting for user to confirm the next page", candidates=cands[:10])
@@ -346,15 +364,31 @@ class JobRunner:
                 await self._wait_if_paused()
                 if self.stop_requested:
                     return
-                outcome = await self._thread_outcome(row)
+                self.in_flight[row["id"]] = row.get("title") or row["thread_url"]
+                self._update_activity(number)
+                try:
+                    outcome = await self._thread_outcome(row)
+                finally:
+                    self.in_flight.pop(row["id"], None)
             ready[row["id"]] = outcome
+            self.page_done += 1
+            self._update_activity(number)
             async with self._write_lock:
                 self._flush(seq, number, order, ready, pointer)
 
         todo = [r for r in order if r["status"] == "pending"]
+        self.page_total = len(order)
+        self.page_done = len(order) - len(todo)
         await asyncio.gather(*(handle(r) for r in todo))
         async with self._write_lock:
             self._flush(seq, number, order, ready, pointer)
+
+    def _update_activity(self, number: int | None) -> None:
+        if self.state != "running":
+            return
+        titles = list(self.in_flight.values())
+        now = f" – reading: {titles[0][:80]}" + (f" (+{len(titles) - 1} more)" if len(titles) > 1 else "") if titles else ""
+        self.activity = f"Listing page {number}: thread {self.page_done}/{self.page_total} done{now}"
 
     def _flush(self, seq: int, number: int, order: list[dict], ready: dict[int, Outcome], pointer: list[int]) -> None:
         """Write finished threads in listing order (a slow thread holds back the ones after it)."""
@@ -383,6 +417,9 @@ class JobRunner:
                                   output_file=str(path), content_hash=h, error="")
             self.db.update_job(self.job_id, current_output_file=str(path), last_confidence=o.confidence)
             self.last_confidence = o.confidence
+            self.done_this_run += 1
+            self._log("info", "extracted", f"saved: {row['title'] or o.title} ({(o.confidence or 0) * 100:.0f}%)",
+                      url=row["thread_url"])
         elif o.status == "failed":
             self.db.update_thread(row["id"], status="failed", confidence=o.confidence, method=o.method,
                                   error=o.error, retry_count=(row.get("retry_count") or 0) + 1)
@@ -516,6 +553,29 @@ class JobManager:
     def runner(self, job_id: str) -> JobRunner | None:
         return self.runners.get(job_id)
 
+    async def delete(self, job_id: str, delete_files: bool = False) -> list[str]:
+        """Stop the job if needed and remove its records (and optionally its output files)."""
+        if self.is_running(job_id):
+            self.runners[job_id].stop()
+            try:
+                await asyncio.wait_for(self.tasks[job_id], timeout=60)
+            except (asyncio.TimeoutError, Exception):
+                self.tasks[job_id].cancel()
+        removed = []
+        if delete_files:
+            for b in self.db.batches(job_id):
+                f = Path(b["filename"])
+                try:
+                    if f.exists():
+                        f.unlink()
+                        removed.append(str(f))
+                except OSError:
+                    pass
+        self.db.delete_job(job_id)
+        self.runners.pop(job_id, None)
+        self.tasks.pop(job_id, None)
+        return removed
+
     async def shutdown(self) -> None:
         for r in self.runners.values():
             r.stop()
@@ -535,6 +595,11 @@ class JobManager:
         running = self.is_running(job_id)
         pages = self.db.get_pages(job_id)
         errors = self.db.events(job_id, level="error", limit=15, newest_first=True)
+        events = self.db.events(job_id, limit=40, newest_first=True)
+        live = runner is not None and running
+        elapsed = time.monotonic() - runner.started_monotonic if live and runner.started_monotonic else None
+        rate = (runner.done_this_run / (elapsed / 60)) if live and elapsed and elapsed > 5 else None
+        max_pages = job["config"].get("max_pages")
         return {
             "id": job_id,
             "status": runner.state if (runner and running) else job["status"],
@@ -556,6 +621,13 @@ class JobManager:
             "last_confidence": job["last_confidence"],
             "avg_confidence": self.db.avg_confidence(job_id),
             "recent_errors": [{"ts": e["ts"], "message": e["message"]} for e in errors],
+            "recent_events": [{"ts": e["ts"], "level": e["level"], "event": e["event"], "message": e["message"]}
+                              for e in events],
+            "activity": runner.activity if live else None,
+            "page_progress": {"done": runner.page_done, "total": runner.page_total} if live else None,
+            "elapsed_seconds": round(elapsed) if elapsed else None,
+            "threads_per_minute": round(rate, 1) if rate else None,
+            "max_pages": max_pages,
             "pending_confirmation": runner.pending_confirmation if runner else None,
             "output_files": [b["filename"] for b in self.db.batches(job_id)],
             "output_dir": str(Path(job["config"].get("output_dir", "output")).expanduser().resolve()),

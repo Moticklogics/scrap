@@ -73,6 +73,13 @@ def test_full_job_per_layout(env, site):
     assert st["status"] == "completed", st
     recs = parse_records(env.out)
     assert sorted({r["file"] for r in recs}) == ["Forum_Pages_0001-0002.txt", "Forum_Pages_0003-0003.txt"]
+    if site == "reddit":
+        # one extra title-only question on page 2; ads and image posts are never collected
+        from forum_extractor.platforms import EMPTY_BODY_TEXT
+        extra = [r for r in recs if r["title"] == "Is cold turkey better than tapering?"]
+        assert len(extra) == 1 and extra[0]["text"] == EMPTY_BODY_TEXT and extra[0]["page"] == "2"
+        assert not any("premium habit app" in r["title"] or "progress chart" in r["title"] for r in recs)
+        recs = [r for r in recs if r not in extra]
     assert len(recs) == 10, [r["title"] for r in recs]
     assert st["threads_duplicate"] == 2  # sticky thread repeated on pages 2 and 3
     by_title = {t["title"]: t for t in BY_ID.values()}

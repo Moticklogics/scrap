@@ -24,7 +24,7 @@ from .domutil import (
     relative_selector, safe_select, safe_select_one, signature, text_of, tokens,
 )
 from .pagination import infer_page_number
-from .platforms import COMMON_EXCLUDE, COMMON_QUOTE_EXCLUDE, PlatformSpec
+from .platforms import COMMON_EXCLUDE, COMMON_QUOTE_EXCLUDE, EMPTY_BODY_TEXT, PlatformSpec
 from .textutil import html_to_text
 
 BODY_HINT = re.compile(
@@ -477,6 +477,11 @@ def extract_original_post(
         res.error = "page is a forum listing, not a discussion thread"
         return res
 
+    if spec and spec.allow_empty_body and not manual_only:
+        empty = _empty_body_post(soup, spec, res)
+        if empty is not None:
+            return empty
+
     body_el = soup.body or soup
     page_text_len = len(text_of(body_el))
     cands = _gather(soup, spec, profile, exclude_quotes, manual_only)
@@ -528,6 +533,32 @@ def extract_original_post(
                      f"(best method: {best.method}). Configure selectors manually for this forum.")
         return res
     res.ok = True
+    return res
+
+
+def _empty_body_post(soup: BeautifulSoup, spec: PlatformSpec, res: ExtractionResult) -> ExtractionResult | None:
+    """A recognised post container whose body is legitimately empty (title-only post)."""
+    first = None
+    fsel = ""
+    for fs in spec.first_post:
+        first = safe_select_one(soup, fs)
+        if first is not None:
+            fsel = fs
+            break
+    if first is None:
+        return None
+    for bs in spec.post_body:
+        body = safe_select_one(first, bs)
+        if body is not None and html_to_text(body, spec.exclude).strip():
+            return None  # has a real body: use the normal pipeline
+    res.ok = True
+    res.text = EMPTY_BODY_TEXT
+    res.confidence = 0.9
+    res.method = f"platform:{spec.name}"
+    res.container_selector = fsel
+    res.warnings.append("the post has no body text; only the title is recorded")
+    res.post_count = 1
+    res.container_html = str(first)[:6000]
     return res
 
 

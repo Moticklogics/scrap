@@ -96,3 +96,40 @@ def test_bad_input(client):
     assert client.post("/api/analyze", json={"config": {"start_url": "ftp://x"}}).status_code == 400
     assert client.get("/api/jobs/nope").status_code == 404
     assert client.get("/").status_code == 200
+
+
+def test_live_progress_cancel_and_delete(client, fresh_server, tmp_path):
+    c = cfg(fresh_server, "/vanilla/categories/general", tmp_path, max_concurrency=1, request_delay=0.4)
+    job = client.post("/api/jobs", json={"config": c, "resume_previous": False}).json()["job_id"]
+    seen_activity = None
+    for _ in range(100):
+        st = client.get(f"/api/jobs/{job}").json()
+        if st["activity"] and "thread" in st["activity"]:
+            seen_activity = st["activity"]
+            break
+        time.sleep(0.1)
+    assert seen_activity and st["page_progress"]["total"] == 4
+    listed = next(j for j in client.get("/api/jobs").json() if j["id"] == job)
+    assert listed["running"] and listed["activity"]
+    client.post(f"/api/jobs/{job}/stop")  # Cancel
+    for _ in range(200):
+        st = client.get(f"/api/jobs/{job}").json()
+        if not st["running"]:
+            break
+        time.sleep(0.1)
+    assert st["status"] == "stopped"
+    assert any(e["event"] == "extracted" for e in st["recent_events"]) or st["threads_completed"] == 0
+    files = st["output_files"]
+    r = client.delete(f"/api/jobs/{job}?files=true").json()
+    assert r["deleted"] == job
+    assert client.get(f"/api/jobs/{job}").status_code == 404
+    import os
+    assert not any(os.path.exists(f) for f in files)
+
+
+def test_delete_running_job(client, fresh_server, tmp_path):
+    c = cfg(fresh_server, "/nodebb/category/2/general-discussion", tmp_path, request_delay=0.5)
+    job = client.post("/api/jobs", json={"config": c, "resume_previous": False}).json()["job_id"]
+    time.sleep(1.0)
+    assert client.delete(f"/api/jobs/{job}").json()["deleted"] == job  # keeps files by default
+    assert all(j["id"] != job for j in client.get("/api/jobs").json())

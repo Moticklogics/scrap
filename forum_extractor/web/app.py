@@ -162,9 +162,17 @@ def create_app(data: str | None = None) -> FastAPI:
         out = []
         for j in db.list_jobs(100):
             c = db.thread_counts(j["id"])
-            out.append({"id": j["id"], "start_url": j["start_url"], "status": j["status"],
-                        "running": manager.is_running(j["id"]), "created_at": j["created_at"],
-                        "done": c.get("done", 0), "failed": c.get("failed", 0), "platform": j["platform"],
+            running = manager.is_running(j["id"])
+            runner = manager.runner(j["id"])
+            out.append({"id": j["id"], "start_url": j["start_url"],
+                        "status": runner.state if (runner and running) else j["status"],
+                        "running": running, "created_at": j["created_at"], "message": j["message"],
+                        "done": c.get("done", 0), "failed": c.get("failed", 0), "discovered": c.get("discovered", 0),
+                        "duplicate": c.get("duplicate", 0), "skipped": c.get("skipped", 0),
+                        "platform": j["platform"], "current_page_number": j["current_page_number"],
+                        "activity": runner.activity if (runner and running) else None,
+                        "max_pages": j["config"].get("max_pages"),
+                        "listing_pages_done": sum(1 for p in db.get_pages(j["id"]) if p["status"] == "done"),
                         "output_dir": j["config"].get("output_dir")})
         return out
 
@@ -196,6 +204,12 @@ def create_app(data: str | None = None) -> FastAPI:
     @app.get("/api/jobs/{job_id}")
     async def job_status(job_id: str):
         return _job(job_id)
+
+    @app.delete("/api/jobs/{job_id}")
+    async def delete_job(job_id: str, files: bool = False):
+        _job(job_id)
+        removed = await manager.delete(job_id, delete_files=files)
+        return {"deleted": job_id, "files_removed": removed}
 
     @app.post("/api/jobs/{job_id}/{action}")
     async def job_action(job_id: str, action: str, payload: dict = Body(default={})):
