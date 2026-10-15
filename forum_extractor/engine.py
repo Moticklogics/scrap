@@ -19,7 +19,7 @@ from .profiles import ProfileStore
 from .storage import DONE_STATES, Database
 from .textutil import soup_from_html
 from .urls import canonical_thread_url, domain_key, in_scope, normalize_url, thread_key
-from .writer import OutputWriter, WriterError
+from .writer import OutputWriter, PostCountWriter, WriterError
 
 log = logging.getLogger("forum_extractor.engine")
 
@@ -128,8 +128,12 @@ class JobRunner:
                 user_agent=self.cfg.user_agent, wait_for_network_idle=self.cfg.wait_for_network_idle,
                 request_delay=self.cfg.request_delay)
         try:
-            self.writer = OutputWriter(self.db, self.job_id, self.cfg.output_dir, self.cfg.file_prefix,
-                                       self.cfg.pages_per_file)
+            if self.cfg.posts_per_file:
+                self.writer = PostCountWriter(self.db, self.job_id, self.cfg.output_dir, self.cfg.file_prefix,
+                                              self.cfg.posts_per_file)
+            else:
+                self.writer = OutputWriter(self.db, self.job_id, self.cfg.output_dir, self.cfg.file_prefix,
+                                           self.cfg.pages_per_file)
             self._load_profile()
             if mode == "retry_failed":
                 await self._retry_failed()
@@ -203,6 +207,10 @@ class JobRunner:
             await self._wait_if_paused()
             if self.stop_requested:
                 return False
+            if self._post_limit_reached():
+                self._log("info", "max_posts", f"reached the configured maximum of {self.cfg.max_posts} posts")
+                self.db.update_job(self.job_id, message=f"finished: {self.cfg.max_posts} posts saved")
+                return True
             if self.cfg.max_pages and seq >= self.cfg.max_pages:
                 self._log("info", "max_pages", f"reached the configured maximum of {self.cfg.max_pages} pages")
                 self.db.update_job(self.job_id, message=f"stopped at the configured maximum of {self.cfg.max_pages} pages")
@@ -269,7 +277,9 @@ class JobRunner:
 
             self.db.upsert_page(self.job_id, seq, url, number, "processing", thread_count=len(links))
             self.activity = f"Listing page {number}: found {len(links)} threads – reading them"
-            self._log("info", "listing_page", f"listing page {number}: {len(links)} threads "
+            self._log("info", "listing_page", (f"read batch {number} of the list: {len(links)} posts "
+                                               if self.cfg.posts_per_file else
+                                               f"listing page {number}: {len(links)} threads ") +
                                               f"({analysis.threads.method}, confidence {analysis.threads.confidence:.2f})",
                       url=url, next=analysis.pagination.next_url)
             if seq == 0 or self.profile is None:
@@ -283,6 +293,13 @@ class JobRunner:
             await self._process_page(seq, number, rows)
             if self.stop_requested:
                 return False
+            if self._post_limit_reached():
+                self.writer.page_done(seq, number)
+                self.db.upsert_page(self.job_id, seq, url, number, "done", next_url=analysis.pagination.next_url,
+                                    next_method="post limit")
+                self._log("info", "max_posts", f"reached the configured maximum of {self.cfg.max_posts} posts")
+                self.db.update_job(self.job_id, message=f"finished: {self.cfg.max_posts} posts saved")
+                return True
 
             pag = analysis.pagination
             next_url, method = pag.next_url, pag.method
@@ -364,7 +381,7 @@ class JobRunner:
         async def handle(row: dict) -> None:
             async with sem:
                 await self._wait_if_paused()
-                if self.stop_requested:
+                if self.stop_requested or self._post_limit_reached(pending=len(self.in_flight)):
                     return
                 self.in_flight[row["id"]] = row.get("title") or row["thread_url"]
                 self._update_activity(number)
@@ -385,12 +402,22 @@ class JobRunner:
         async with self._write_lock:
             self._flush(seq, number, order, ready, pointer)
 
+    def _post_limit_reached(self, pending: int = 0) -> bool:
+        if not self.cfg.max_posts:
+            return False
+        return self.db.thread_counts(self.job_id).get("done", 0) + pending >= self.cfg.max_posts
+
     def _update_activity(self, number: int | None) -> None:
         if self.state != "running":
             return
         titles = list(self.in_flight.values())
         now = f" – reading: {titles[0][:80]}" + (f" (+{len(titles) - 1} more)" if len(titles) > 1 else "") if titles else ""
-        self.activity = f"Listing page {number}: thread {self.page_done}/{self.page_total} done{now}"
+        if self.cfg.posts_per_file:
+            saved = self.db.thread_counts(self.job_id).get("done", 0)
+            limit = f" of {self.cfg.max_posts}" if self.cfg.max_posts else ""
+            self.activity = f"{saved}{limit} posts saved · batch {number}: {self.page_done}/{self.page_total}{now}"
+        else:
+            self.activity = f"Listing page {number}: thread {self.page_done}/{self.page_total} done{now}"
 
     def _flush(self, seq: int, number: int, order: list[dict], ready: dict[int, Outcome], pointer: list[int]) -> None:
         """Write finished threads in listing order (a slow thread holds back the ones after it)."""
@@ -602,6 +629,7 @@ class JobManager:
         elapsed = time.monotonic() - runner.started_monotonic if live and runner.started_monotonic else None
         rate = (runner.done_this_run / (elapsed / 60)) if live and elapsed and elapsed > 5 else None
         max_pages = job["config"].get("max_pages")
+        max_posts = job["config"].get("max_posts")
         return {
             "id": job_id,
             "status": runner.state if (runner and running) else job["status"],
@@ -630,6 +658,8 @@ class JobManager:
             "elapsed_seconds": round(elapsed) if elapsed else None,
             "threads_per_minute": round(rate, 1) if rate else None,
             "max_pages": max_pages,
+            "max_posts": max_posts,
+            "count_by_posts": bool(job["config"].get("posts_per_file")),
             "pending_confirmation": runner.pending_confirmation if runner else None,
             "output_files": [b["filename"] for b in self.db.batches(job_id)],
             "output_dir": str(Path(job["config"].get("output_dir", "output")).expanduser().resolve()),

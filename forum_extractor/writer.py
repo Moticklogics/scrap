@@ -14,11 +14,11 @@ class WriterError(Exception):
 
 
 def format_record(page_number: int | None, title: str, url: str, text: str,
-                  status: str = "Successfully extracted") -> str:
+                  status: str = "Successfully extracted", label: str = "LISTING PAGE") -> str:
     page = page_number if page_number is not None else "N/A"
     return (
         f"{SEP}\n"
-        f"LISTING PAGE: {page}\n"
+        f"{label}: {page}\n"
         f"THREAD TITLE: {title}\n"
         f"THREAD URL: {url}\n"
         f"STATUS: {status}\n"
@@ -28,8 +28,8 @@ def format_record(page_number: int | None, title: str, url: str, text: str,
     )
 
 
-def batch_filename(prefix: str, first: int, last: int) -> str:
-    width = max(4, len(str(last)))
+def batch_filename(prefix: str, first: int, last: int, min_width: int = 4) -> str:
+    width = max(min_width, len(str(last)))
     return f"{prefix}_{first:0{width}d}-{last:0{width}d}.txt"
 
 
@@ -157,3 +157,76 @@ class OutputWriter:
 
     def current_file(self) -> str:
         return str(self._fh_path) if self._fh_path else ""
+
+
+class PostCountWriter(OutputWriter):
+    """Rotates by number of saved posts instead of listing pages (used for Reddit, which scrolls endlessly).
+
+    Files are named after the post numbers they contain, e.g. Reddit_Posts_00001-00500.txt, and every record
+    carries "POST NUMBER: n" instead of a listing page number.
+    """
+
+    def __init__(self, db: Database, job_id: str, output_dir: str | Path, prefix: str, posts_per_file: int):
+        super().__init__(db, job_id, output_dir, prefix, posts_per_file)
+        self.count = db.thread_counts(job_id).get("done", 0)
+
+    def _batch_for_post(self, n: int) -> tuple[int, Path]:
+        idx = (n - 1) // self.n
+        b = self.db.get_batch(self.job_id, idx)
+        if b is not None:
+            return idx, Path(b["filename"])
+        first = idx * self.n + 1
+        planned = first + self.n - 1
+        name = batch_filename(self.prefix, first, planned, min_width=5)
+        path = self.dir / name
+        k = 2
+        while path.exists():
+            path = self.dir / name.replace(".txt", f"_{k}.txt")
+            k += 1
+        self.db.save_batch(self.job_id, idx, first_page=first, last_page=first - 1, planned_last=planned,
+                           filename=str(path), closed=0)
+        return idx, path
+
+    def write(self, seq: int, page_number: int | None, title: str, url: str, text: str) -> Path:
+        n = self.count + 1
+        idx, path = self._batch_for_post(n)
+        fh = self._open(path)
+        try:
+            fh.write(format_record(n, title, url, text, label="POST NUMBER"))
+            fh.flush()
+        except OSError as exc:
+            raise WriterError(f"write failed for {path}: {exc}") from exc
+        self.count = n
+        self.db.save_batch(self.job_id, idx, last_page=n)
+        if n % self.n == 0:
+            self.sync()
+            self._close_batch(idx)
+        return path
+
+    def page_done(self, seq: int, page_number: int | None) -> None:
+        self.sync()
+
+    def _close_batch(self, idx: int) -> None:
+        b = self.db.get_batch(self.job_id, idx)
+        if b and not b["closed"] and b["last_page"] < b["first_page"]:
+            # nothing written into this batch: drop it
+            try:
+                Path(b["filename"]).unlink(missing_ok=True)
+            except OSError:
+                pass
+            self.db.save_batch(self.job_id, idx, closed=1)
+            return
+        if b and not b["closed"]:
+            old = Path(b["filename"])
+            if self._fh_path == old:
+                self.close()
+            new = old.with_name(batch_filename(self.prefix, b["first_page"], b["last_page"], min_width=5))
+            final = old
+            if new != old and old.exists() and not new.exists():
+                try:
+                    old.rename(new)
+                    final = new
+                    self.db.rename_output(self.job_id, str(old), str(new))
+                except OSError:
+                    pass
+            self.db.save_batch(self.job_id, idx, filename=str(final), closed=1)

@@ -283,3 +283,35 @@ def test_login_walled_thread_is_skipped_not_fatal(env):
     ok, wall = asyncio.run(go())
     assert ok["ok"] and ok["text"] == expected_text(BY_ID[4])
     assert not wall["ok"] and "access restricted" in wall["error"]
+
+
+def parse_post_records(out_dir: Path) -> list[dict]:
+    recs = []
+    for f in sorted(out_dir.glob("*.txt")):
+        for m in re.finditer(r"={80}\nPOST NUMBER: (\d+)\nTHREAD TITLE: (.*?)\nTHREAD URL: (.*?)\nSTATUS: .*?\n"
+                             r"ORIGINAL POST:\n(.*?)\n={80}\n", f.read_text(encoding="utf-8"), re.S):
+            recs.append({"file": f.name, "n": int(m.group(1)), "title": m.group(2), "text": m.group(4)})
+    return recs
+
+
+def test_reddit_counted_by_posts(env):
+    async def go():
+        return await env.run(env.cfg("/reddit/r/NoFap/", posts_per_file=4, max_posts=7, file_prefix="Reddit_Posts",
+                                     max_concurrency=1))
+    m, job = asyncio.run(go())
+    st = m.status(job)
+    assert st["status"] == "completed" and st["threads_completed"] == 7, st
+    recs = parse_post_records(env.out)
+    assert [r["n"] for r in recs] == list(range(1, 8))
+    assert sorted(p.name for p in env.out.iterdir()) == ["Reddit_Posts_00001-00004.txt", "Reddit_Posts_00005-00007.txt"]
+    assert recs[0]["title"] == "Forum rules - please read before posting"
+    assert recs[1]["text"] == expected_text(BY_ID[2])
+
+
+def test_reddit_all_posts_one_file(env):
+    async def go():
+        return await env.run(env.cfg("/reddit/r/NoFap/", posts_per_file=500, file_prefix="Reddit_Posts"))
+    m, job = asyncio.run(go())
+    assert m.status(job)["status"] == "completed"
+    assert [p.name for p in env.out.iterdir()] == ["Reddit_Posts_00001-00011.txt"]
+    assert len(parse_post_records(env.out)) == 11

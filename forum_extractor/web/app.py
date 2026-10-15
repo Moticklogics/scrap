@@ -172,6 +172,8 @@ def create_app(data: str | None = None) -> FastAPI:
                         "platform": j["platform"], "current_page_number": j["current_page_number"],
                         "activity": runner.activity if (runner and running) else None,
                         "max_pages": j["config"].get("max_pages"),
+                        "max_posts": j["config"].get("max_posts"),
+                        "count_by_posts": bool(j["config"].get("posts_per_file")),
                         "listing_pages_done": sum(1 for p in db.get_pages(j["id"]) if p["status"] == "done"),
                         "output_dir": j["config"].get("output_dir")})
         return out
@@ -225,6 +227,15 @@ def create_app(data: str | None = None) -> FastAPI:
                 manager.start(job_id, "crawl")
         elif action == "stop" and running:
             runner.stop()
+        elif action == "ignore_robots":
+            # explicit user choice from the UI after a robots.txt block
+            if running:
+                raise HTTPException(409, "job is running")
+            job = db.get_job(job_id)
+            cfg = dict(job["config"], respect_robots=False)
+            db.update_job(job_id, config=cfg)
+            db.log_event(job_id, "warn", "robots_ignored", "robots.txt check turned off by the user for this job")
+            manager.start(job_id, "crawl")
         elif action == "retry":
             if running:
                 raise HTTPException(409, "stop or wait for the job to finish before retrying failed threads")

@@ -63,20 +63,26 @@ an unfinished job continues that job instead of starting over.
 
 ## Reddit
 
-Paste a subreddit URL such as `https://www.reddit.com/r/NoFap/new/`. Reddit is read through
-`old.reddit.com`, which has real "next" pages of 25 posts instead of endless scrolling; `www`, `new`
-and `m` reddit links are converted automatically. For every **text post** the record holds the title
-(`THREAD TITLE`) and the post body, which is the question (`ORIGINAL POST`). Comments, image and link
-posts, and ads are skipped. A post with only a title is saved with
-`(this post has no body text - title only)`.
+Use the **Reddit** tab, which is separate from the forum input. Type a subreddit (`r/socialanxiety` or its full
+link), choose which list to read (Newest, Hot, Top – all time / year / month), how many posts you want,
+and how many posts go into each text file.
+
+Reddit is one endlessly scrolling list, so Reddit jobs are counted in **posts**, not pages:
+* each record starts with `POST NUMBER: n` and holds the post title (`THREAD TITLE`) and the question
+  (`ORIGINAL POST`); comments, image/link posts and ads are skipped; a title-only post is saved with
+  `(this post has no body text - title only)`
+* files are named by post number: `Reddit_Posts_00001-00500.txt`, `Reddit_Posts_00501-01000.txt`, …
+* the job stops once **How many posts** have been saved
+
+Behind the scenes the posts are read through `old.reddit.com`, 100 posts per request.
 
 Things to know:
-* Reddit lists only about 1,000 posts per listing (for example `/new/` or `/top/?t=all`), so a
-  single subreddit URL can't reach further back than that.
-* Reddit's robots.txt asks automated tools not to crawl. With **Respect robots.txt** ticked (the
-  default), the job stops with a message. Untick it only if your use is allowed by Reddit's terms.
-* Use a delay of 2 seconds or more. If Reddit shows a "blocked by network security" page, the job
-  stops, and the app does not try to get around it. Private and 18+ communities are not accessed.
+* Reddit shows at most about 1,000 posts per list. To reach other posts, run another list (Hot, Top – all time…).
+* Reddit's robots.txt asks automated tools not to crawl. With **Respect Reddit's robots.txt** ticked, the job
+  stops, and the job card then offers **Ignore robots.txt & run**, which asks you to confirm. Only do this if
+  your use is allowed by Reddit's terms.
+* Keep the delay at 2 seconds or more. If Reddit shows a "blocked by network security" page, the job stops
+  and the app does not try to get around it. Private and 18+ communities are not accessed.
 
 ## Command line
 

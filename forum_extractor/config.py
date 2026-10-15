@@ -56,6 +56,8 @@ class JobConfig:
     start_url: str
     output_dir: str = "output"
     max_pages: int | None = None  # None = until the last page
+    max_posts: int | None = None  # stop after this many saved posts (used for Reddit)
+    posts_per_file: int | None = None  # rotate output by number of posts instead of listing pages (Reddit)
     pages_per_file: int = 1100
     request_delay: float = 1.0  # seconds between request starts (global)
     max_concurrency: int = 2  # concurrent thread pages
@@ -82,14 +84,15 @@ class JobConfig:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "JobConfig":
         kw = _filter_kwargs(cls, data)
-        if kw.get("max_pages") in ("", 0, "0"):
-            kw["max_pages"] = None
+        for key in ("max_pages", "max_posts", "posts_per_file"):
+            if kw.get(key) in ("", 0, "0"):
+                kw[key] = None
+            elif kw.get(key) is not None:
+                kw[key] = int(kw[key])
         for key, typ in (("pages_per_file", int), ("max_concurrency", int), ("max_retries", int),
                          ("request_delay", float), ("confidence_threshold", float), ("page_timeout", float)):
             if key in kw and kw[key] is not None:
                 kw[key] = typ(kw[key])
-        if kw.get("max_pages") is not None:
-            kw["max_pages"] = int(kw["max_pages"])
         cfg = cls(**kw)
         cfg.validate()
         return cfg

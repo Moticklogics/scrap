@@ -32,9 +32,13 @@ def to_old_reddit(url: str) -> str:
     """Reddit's server-rendered interface (old.reddit.com) has real pagination; the new one scrolls forever."""
     parts = urlsplit(url)
     host = (parts.hostname or "").lower()
-    if host in _REDDIT_HOSTS:
-        return urlunsplit((parts.scheme or "https", "old.reddit.com", parts.path, parts.query, parts.fragment))
-    return url
+    if host not in _REDDIT_HOSTS and host != "old.reddit.com":
+        return url
+    query = parts.query
+    # listing pages: ask for 100 posts per page (Reddit's maximum) instead of 25
+    if "/comments/" not in parts.path and not any(k == "limit" for k, _ in parse_qsl(query)):
+        query = (query + "&" if query else "") + "limit=100"
+    return urlunsplit((parts.scheme or "https", "old.reddit.com", parts.path, query, parts.fragment))
 
 
 def is_reddit(url: str) -> bool:
@@ -188,7 +192,8 @@ _PAGE_PATTERNS = [
     re.compile(r"/page[-/]?\d+/?$", re.I),
     re.compile(r"/p\d+/?$", re.I),
 ]
-_PAGE_PARAMS = {"page", "pg", "p", "start", "offset", "pagenumber", "pagenum", "count", "after", "before", "cursor"}
+_PAGE_PARAMS = {"page", "pg", "p", "start", "offset", "pagenumber", "pagenum", "count", "after", "before", "cursor",
+                "limit"}
 
 
 def listing_base(url: str) -> str:

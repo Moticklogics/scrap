@@ -133,3 +133,23 @@ def test_delete_running_job(client, fresh_server, tmp_path):
     time.sleep(1.0)
     assert client.delete(f"/api/jobs/{job}").json()["deleted"] == job  # keeps files by default
     assert all(j["id"] != job for j in client.get("/api/jobs").json())
+
+
+def test_ignore_robots_button(client, fresh_server, tmp_path):
+    c = cfg(fresh_server, "/private/forum", tmp_path)
+    job = client.post("/api/jobs", json={"config": c, "resume_previous": False}).json()["job_id"]
+    for _ in range(100):
+        st = client.get(f"/api/jobs/{job}").json()
+        if not st["running"] and st["status"] != "created":
+            break
+        time.sleep(0.1)
+    assert st["status"] == "blocked" and "robots.txt" in st["message"]
+    client.post(f"/api/jobs/{job}/ignore_robots")
+    for _ in range(150):
+        st = client.get(f"/api/jobs/{job}").json()
+        if not st["running"]:
+            break
+        time.sleep(0.1)
+    assert st["config"]["respect_robots"] is False
+    assert st["status"] != "blocked" or "robots" not in st["message"]
+    assert any(e["event"] == "robots_ignored" for e in st["recent_events"])

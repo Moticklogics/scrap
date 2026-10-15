@@ -69,6 +69,9 @@ a{color:var(--accent)}
 .job .act{color:var(--muted);font-size:13px;margin-top:2px}
 .job .nums{display:flex;gap:14px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
 .job .nums b{color:var(--fg)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.tab{border:none;border-bottom:3px solid transparent;border-radius:0;padding:8px 16px;font-weight:600;color:var(--muted);background:none}
+.tab.active{color:var(--fg);border-bottom-color:var(--accent)}
 .feed{list-style:none;margin:0;padding:0;max-height:320px;overflow:auto;font-size:13px}
 .feed li{padding:4px 0;border-bottom:1px dashed var(--line);display:flex;gap:8px}
 .feed .t{color:var(--muted);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;white-space:nowrap}
@@ -78,45 +81,79 @@ a{color:var(--accent)}
 <body>
 <header>
   <h1>Forum Post Extractor</h1>
-  <div class="steps"><span>1 · Paste a forum or Reddit URL</span><span>2 · Analyze &amp; check the preview</span><span>3 · Start – follow it below</span></div>
+  <div class="steps"><span>1 · Choose Forum or Reddit</span><span>2 · Analyze &amp; check the preview</span><span>3 · Start – follow it below</span></div>
 </header>
 <main>
 
 <section class="card">
   <h2>1. What do you want to collect?</h2>
-  <div class="row">
-    <div class="grow"><label for="url">Forum listing page, subreddit, or a single thread</label>
-      <input id="url" type="text" placeholder="https://forum.example.com/index.php?forums/general.2/  or  https://www.reddit.com/r/NoFap/new/"></div>
-    <button id="btnAnalyze">Analyze &amp; preview</button>
-    <button class="primary" id="btnStart">Start collecting</button>
+  <div class="tabs">
+    <button class="tab active" data-tab="forum">🌐 Forum</button>
+    <button class="tab" data-tab="reddit"><span style="color:#ff4500">●</span> Reddit</button>
   </div>
-  <div id="siteHint" class="banner info hidden"></div>
-  <div id="setupMsg" class="banner hidden"></div>
-  <details id="settingsBox" open>
-    <summary>Settings</summary>
-    <div class="grid" style="margin-top:6px">
+
+  <div id="tabForum">
+    <div class="row">
+      <div class="grow"><label for="url">Forum listing page (or a single thread)</label>
+        <input id="url" type="text" placeholder="https://forum.example.com/index.php?forums/general.2/page-2"></div>
+      <button id="btnAnalyze">Analyze &amp; preview</button>
+      <button class="primary" id="btnStart">Start collecting</button>
+    </div>
+    <div class="grid" style="margin-top:12px">
       <div><label>Maximum listing pages (empty = all)</label><input id="max_pages" type="number" min="1"></div>
       <div><label>Listing pages per text file</label><input id="pages_per_file" type="number" min="1" value="10"></div>
       <div><label>Delay between requests (seconds)</label><input id="request_delay" type="number" min="0" step="0.1" value="1"></div>
+      <div><label>File name prefix</label><input id="file_prefix" type="text" value="Forum_Pages"></div>
+    </div>
+    <div class="checks"><label><input type="checkbox" id="respect_robots" checked> Respect robots.txt</label></div>
+  </div>
+
+  <div id="tabReddit" class="hidden">
+    <div class="row">
+      <div class="grow"><label for="rd_sub">Subreddit</label>
+        <input id="rd_sub" type="text" placeholder="r/socialanxiety   or   https://www.reddit.com/r/socialanxiety/"></div>
+      <div style="min-width:190px"><label>Which posts</label><select id="rd_sort">
+        <option value="new">Newest first</option><option value="hot">Hot</option>
+        <option value="top-all">Top – all time</option><option value="top-year">Top – past year</option>
+        <option value="top-month">Top – past month</option></select></div>
+      <button id="rdAnalyze">Analyze &amp; preview</button>
+      <button class="primary" id="rdStart">Start collecting</button>
+    </div>
+    <div class="grid" style="margin-top:12px">
+      <div><label>How many posts (empty = as many as Reddit shows)</label><input id="rd_max_posts" type="number" min="1" value="1000"></div>
+      <div><label>Posts per text file</label><input id="rd_posts_per_file" type="number" min="1" value="500"></div>
+      <div><label>Delay between requests (seconds)</label><input id="rd_delay" type="number" min="0" step="0.5" value="2"></div>
+    </div>
+    <div class="banner info" style="font-size:13px">
+      Reddit is one endlessly scrolling list, so it's counted in <b>posts</b>: each post's <b>title and question</b> is saved
+      (comments, image/link posts and ads are skipped). Files are named by post number, e.g. <code>Reddit_Posts_00001-00500.txt</code>.
+      Reddit shows at most about 1,000 posts per list – choose another list (Hot / Top) to reach different posts.
+    </div>
+    <div class="checks"><label><input type="checkbox" id="rd_robots" checked> Respect Reddit's robots.txt
+      <span class="muted">– Reddit asks automated tools not to crawl, so while this is ticked the job will stop. Untick it only if your use is allowed by Reddit's terms.</span></label></div>
+  </div>
+
+  <div id="setupMsg" class="banner hidden"></div>
+  <details id="settingsBox">
+    <summary>More settings</summary>
+    <div class="grid" style="margin-top:6px">
       <div><label>Threads read at the same time</label><input id="max_concurrency" type="number" min="1" max="16" value="2"></div>
       <div><label>Confidence threshold (0–1)</label><input id="confidence_threshold" type="number" min="0" max="1" step="0.05" value="0.6"></div>
       <div><label>Detection mode</label><select id="mode"><option value="auto">Automatic</option><option value="manual">Saved selectors only</option></select></div>
-      <div><label>File name prefix</label><input id="file_prefix" type="text" value="Forum_Pages"></div>
       <div><label>AI helper (local Ollama, experimental)</label><select id="ai_classifier"><option value="none">Off</option><option value="ollama">On</option></select></div>
-    </div>
-    <div class="row" style="margin-top:10px">
-      <div class="grow"><label>Output folder (text files are saved here)</label><input id="output_dir" type="text"></div>
-      <button id="btnBrowse">Browse…</button>
-      <button id="btnOpenFolder">Open folder</button>
     </div>
     <div class="checks">
       <label><input type="checkbox" id="resume_previous" checked> Continue an unfinished job for the same URL</label>
-      <label><input type="checkbox" id="skip_duplicates" checked> Skip duplicate threads</label>
-      <label><input type="checkbox" id="respect_robots" checked> Respect robots.txt</label>
+      <label><input type="checkbox" id="skip_duplicates" checked> Skip duplicate posts</label>
       <label><input type="checkbox" id="exclude_quotes" checked> Remove quoted text</label>
       <label><input type="checkbox" id="headful"> Show the browser window</label>
     </div>
   </details>
+  <div class="row" style="margin-top:10px">
+    <div class="grow"><label>Output folder (text files are saved here)</label><input id="output_dir" type="text"></div>
+    <button id="btnBrowse">Browse…</button>
+    <button id="btnOpenFolder">Open folder</button>
+  </div>
 </section>
 
 <section class="card hidden" id="previewCard">
@@ -222,15 +259,38 @@ function fmtDur(sec) { if (sec == null) return "–"; const h = Math.floor(sec /
   return h ? `${h}h ${m}m` : m ? `${m}m ${s}s` : `${s}s`; }
 const isReddit = u => /(^|\.|\/\/)reddit\.com\//i.test(u || "");
 
+let activeTab = "forum";
+function redditUrl() {
+  let v = $("rd_sub").value.trim();
+  if (!v) return "";
+  let name = v;
+  const m = v.match(/reddit\.com\/r\/([^\/?#\s]+)/i) || v.match(/^\/?r\/([^\/?#\s]+)/i);
+  if (m) name = m[1];
+  name = name.replace(/^\/+|\/+$/g, "");
+  const sort = $("rd_sort").value;
+  if (sort.startsWith("top-")) return `https://www.reddit.com/r/${name}/top/?t=${sort.slice(4)}`;
+  return `https://www.reddit.com/r/${name}/${sort}/`;
+}
 function config() {
   const n = id => $(id).value === "" ? null : Number($(id).value);
-  return {start_url: $("url").value.trim(), output_dir: $("output_dir").value.trim() || "output",
-    max_pages: n("max_pages"), pages_per_file: n("pages_per_file") || 10, request_delay: n("request_delay") ?? 1,
+  const common = {output_dir: $("output_dir").value.trim() || "output",
     max_concurrency: n("max_concurrency") || 2, confidence_threshold: n("confidence_threshold") ?? 0.6,
-    mode: $("mode").value, file_prefix: $("file_prefix").value.trim() || "Forum_Pages",
-    skip_duplicates: $("skip_duplicates").checked, respect_robots: $("respect_robots").checked,
+    mode: $("mode").value, skip_duplicates: $("skip_duplicates").checked,
     exclude_quotes: $("exclude_quotes").checked, headless: !$("headful").checked,
     ai_classifier: $("ai_classifier").value, on_unknown_pagination: "ask"};
+  if (activeTab === "reddit") return {...common, start_url: redditUrl(), max_pages: null,
+    max_posts: n("rd_max_posts"), posts_per_file: n("rd_posts_per_file") || 500, pages_per_file: 1100,
+    request_delay: n("rd_delay") ?? 2, respect_robots: $("rd_robots").checked, file_prefix: "Reddit_Posts"};
+  return {...common, start_url: $("url").value.trim(), max_pages: n("max_pages"), pages_per_file: n("pages_per_file") || 10,
+    max_posts: null, posts_per_file: null, request_delay: n("request_delay") ?? 1,
+    respect_robots: $("respect_robots").checked, file_prefix: $("file_prefix").value.trim() || "Forum_Pages"};
+}
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  $("tabForum").classList.toggle("hidden", tab !== "forum");
+  $("tabReddit").classList.toggle("hidden", tab !== "reddit");
+  $("setupMsg").classList.add("hidden");
 }
 function profileFromForm() {
   const p = {};
@@ -245,18 +305,11 @@ function fillProfile(p, saved) {
   $("p_exclude_selectors").value = (p.exclude_selectors || []).join("\n");
 }
 
-// ---------------------------------------------------------------- site hint
-function updateHint() {
+// a Reddit link pasted into the forum box: move it to the Reddit tab
+function checkForumUrl() {
   const u = $("url").value.trim();
-  if (isReddit(u)) {
-    banner($("siteHint"), `<b>Reddit mode.</b> Pages are read through <code>old.reddit.com</code> (25 posts per page with real "next" links).
-      For every <b>text post</b> the title and the question are saved – comments, image/link posts and ads are skipped.
-      Reddit only lets you go back about 1,000 posts per listing (e.g. /new/). Use a delay of 2 seconds or more.
-      ${$("respect_robots").checked ? `<br><span class="warn">Reddit's robots.txt asks bots not to crawl, so with “Respect robots.txt” ticked the job will stop.
-      Untick it only if you accept Reddit's terms for your use.</span>` : ""}`, "info");
-    if (Number($("request_delay").value) < 2) $("request_delay").value = 2;
-    if ($("file_prefix").value === "Forum_Pages") $("file_prefix").value = "Reddit_Pages";
-  } else { $("siteHint").classList.add("hidden"); if ($("file_prefix").value === "Reddit_Pages") $("file_prefix").value = "Forum_Pages"; }
+  if (/(^|\.|\/\/)reddit\.com\//i.test(u)) { $("rd_sub").value = u; $("url").value = ""; switchTab("reddit");
+    banner($("setupMsg"), "That's a Reddit link, so I moved it to the Reddit tab.", "info"); }
 }
 
 // ---------------------------------------------------------------- preview
@@ -299,9 +352,9 @@ function renderAnalysis(res) {
 }
 async function analyze(withProfile=false) {
   const cfg = config();
-  if (!cfg.start_url) { banner($("setupMsg"), "Paste a URL first.", "badb"); return; }
+  if (!cfg.start_url) { banner($("setupMsg"), activeTab === "reddit" ? "Type a subreddit first." : "Paste a URL first.", "badb"); return; }
   banner($("setupMsg"), "⏳ Opening the page in a browser and working out how the site is built… (10–30 seconds)", "info");
-  $("btnAnalyze").disabled = true;
+  $("btnAnalyze").disabled = $("rdAnalyze").disabled = true;
   try {
     const res = await api("/api/analyze", {method: "POST", body: {config: cfg, profile: withProfile ? profileFromForm() : null}});
     renderAnalysis(res);
@@ -312,7 +365,7 @@ async function analyze(withProfile=false) {
       : `⚠ The automatic extraction is not sure about this site. Check the preview below.`, pv.ok ? "okb" : "warnb");
     $("previewCard").scrollIntoView({behavior: "smooth", block: "start"});
   } catch (e) { banner($("setupMsg"), `✖ ${esc(e.message)}`, "badb"); }
-  finally { $("btnAnalyze").disabled = false; }
+  finally { $("btnAnalyze").disabled = $("rdAnalyze").disabled = false; }
 }
 async function testThread(url, title="") {
   if (!url) return;
@@ -323,6 +376,7 @@ async function testThread(url, title="") {
 
 // ---------------------------------------------------------------- jobs list
 function jobProgress(j) {
+  if (j.count_by_posts && j.max_posts) return Math.min(100, Math.round(j.done / j.max_posts * 100));
   if (j.max_pages && j.current_page_number) return Math.min(100, Math.round((j.listing_pages_done ?? 0) / j.max_pages * 100));
   return null;
 }
@@ -332,6 +386,8 @@ function jobButtons(j) {
   if (j.running && j.status === "paused") b.push(`<button class="small" data-act="resume" data-id="${j.id}">▶ Resume</button>`);
   if (j.running) b.push(`<button class="small danger" data-act="stop" data-id="${j.id}">■ Cancel</button>`);
   if (!j.running && j.status !== "completed") b.push(`<button class="small" data-act="resume" data-id="${j.id}">▶ Continue</button>`);
+  if (!j.running && j.status === "blocked" && /robots\.txt/i.test(j.message || ""))
+    b.push(`<button class="small" data-act="ignore_robots" data-id="${j.id}">Ignore robots.txt &amp; run</button>`);
   if (!j.running && j.failed) b.push(`<button class="small" data-act="retry" data-id="${j.id}">↻ Retry ${j.failed} failed</button>`);
   b.push(`<button class="small danger" data-act="delete" data-id="${j.id}">🗑 Delete</button>`);
   return b.join("");
@@ -350,7 +406,8 @@ function renderJobs(jobs) {
       ${bar}
       <div class="nums"><span>Saved <b>${j.done}</b></span><span>Found <b>${j.discovered}</b></span><span>Failed <b>${j.failed}</b></span>
         <span>Duplicates <b>${j.duplicate}</b></span><span>Skipped <b>${j.skipped}</b></span>
-        <span>Listing page <b>${j.current_page_number ?? "–"}</b>${j.max_pages ? " of " + j.max_pages : ""}</span>
+        ${j.count_by_posts ? `<span>Posts saved <b>${j.done}</b>${j.max_posts ? " of " + j.max_posts : ""}</span>`
+          : `<span>Listing page <b>${j.current_page_number ?? "–"}</b>${j.max_pages ? " of " + j.max_pages : ""}</span>`}
         <span class="muted">started ${esc((j.created_at || "").replace("T", " ").slice(0, 16))}</span></div>
     </div>`;
   }).join("");
@@ -368,14 +425,17 @@ function renderDetail(st) {
   const prog = st.page_progress && st.page_progress.total ? Math.round(st.page_progress.done / st.page_progress.total * 100) : null;
   $("dStatus").innerHTML = `${pill(st.status)} ${st.platform ? esc(st.platform) : ""}
     <div style="margin-top:6px;font-size:15px">${st.running ? "⏳ " + esc(st.activity || "Working…") : esc(st.message || "")}</div>
-    ${st.running && prog != null ? `<div class="bar"><i style="width:${prog}%"></i></div><div class="muted" style="font-size:12px">This listing page: ${st.page_progress.done} of ${st.page_progress.total} threads</div>` : ""}`;
+    ${st.running && prog != null ? `<div class="bar"><i style="width:${prog}%"></i></div><div class="muted" style="font-size:12px">${st.count_by_posts ? "This batch" : "This listing page"}: ${st.page_progress.done} of ${st.page_progress.total} ${st.count_by_posts ? "posts" : "threads"}</div>` : ""}`;
   const avg = st.avg_confidence == null ? "–" : Math.round(st.avg_confidence * 100) + "%";
-  $("jobStats").innerHTML = [
+  $("jobStats").innerHTML = (st.count_by_posts ? [
+    ["Posts saved", st.threads_completed + (st.max_posts ? " / " + st.max_posts : "")], ["Batches read", st.listing_pages_done],
+  ] : [
     ["Listing page now", st.current_page_number ?? "–"], ["Listing pages done", st.listing_pages_done + (st.max_pages ? " / " + st.max_pages : "")],
-    ["Posts saved", st.threads_completed], ["Threads found", st.threads_discovered], ["Failed", st.threads_failed],
+    ["Posts saved", st.threads_completed],
+  ]).concat([ [st.count_by_posts ? "Posts found" : "Threads found", st.threads_discovered], ["Failed", st.threads_failed],
     ["Duplicates", st.threads_duplicate], ["Skipped", st.threads_skipped], ["Avg. confidence", avg],
     ["Running for", fmtDur(st.elapsed_seconds)], ["Speed", st.threads_per_minute ? st.threads_per_minute + " / min" : "–"],
-  ].map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join("");
+  ]).map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join("");
   $("feed").innerHTML = (st.recent_events || []).map(e => {
     const [ic, cls] = ICON[e.event] || (e.level === "error" ? ["✖", "bad"] : e.level === "warn" ? ["⚠", "warn"] : ["•", "muted"]);
     return `<li><span class="t">${esc(e.ts.slice(11, 19))}</span><span class="ico ${cls}">${ic}</span><span>${esc(e.message)}</span></li>`;
@@ -413,6 +473,9 @@ async function jobAction(act, id) {
       const files = confirm("Also delete its text files from the output folder?\n\nOK = delete the files too\nCancel = keep the files");
       await api(`/api/jobs/${id}?files=${files}`, {method: "DELETE"});
       if (selectedJob === id) { selectedJob = null; $("detailCard").classList.add("hidden"); }
+    } else if (act === "ignore_robots") {
+      if (!confirm("This site's robots.txt asks automated tools not to read it.\n\nRun this job anyway, ignoring robots.txt? Only do this if your use is allowed by the site's terms.")) return;
+      await api(`/api/jobs/${id}/ignore_robots`, {method: "POST"});
     } else if (act === "stop") {
       if (!confirm("Cancel this job? Everything saved so far is kept, and you can continue it later.")) return;
       await api(`/api/jobs/${id}/stop`, {method: "POST"});
@@ -432,8 +495,8 @@ document.addEventListener("click", ev => {
   if (t.dataset.confirmManual) { api(`/api/jobs/${selectedJob}/confirm`, {method: "POST", body: {url: $("manualNext").value.trim() || null}}).then(pollDetail); return; }
   if (t.dataset.select && t.tagName !== "BUTTON") select(t.dataset.select);
 });
-$("url").addEventListener("input", updateHint);
-$("respect_robots").addEventListener("change", updateHint);
+$("url").addEventListener("change", checkForumUrl);
+$("url").addEventListener("paste", () => setTimeout(checkForumUrl, 0));
 $("btnAnalyze").onclick = () => analyze(false);
 $("btnTest").onclick = () => testThread($("testUrl").value.trim());
 $("btnRetest").onclick = () => { const u = $("testUrl").value.trim(); if (u) testThread(u); else analyze(true); };
@@ -448,18 +511,22 @@ $("btnDeleteProfile").onclick = async () => {
   await api(`/api/profiles/${encodeURIComponent(dom)}`, {method: "DELETE"});
   banner($("profMsg"), "Saved selectors deleted – automatic detection will be used.", "info");
 };
-$("btnStart").onclick = async () => {
+async function startJob() {
   const cfg = config();
-  if (!cfg.start_url) { banner($("setupMsg"), "Paste a URL first.", "badb"); return; }
-  $("btnStart").disabled = true;
+  if (!cfg.start_url) { banner($("setupMsg"), activeTab === "reddit" ? "Type a subreddit first." : "Paste a URL first.", "badb"); return; }
+  $("btnStart").disabled = $("rdStart").disabled = true;
   try {
     const r = await api("/api/jobs", {method: "POST", body: {config: cfg, resume_previous: $("resume_previous").checked}});
     banner($("setupMsg"), r.resumed ? "▶ Continuing your earlier job for this URL – see it under <b>3. Jobs</b>." : "▶ Job started – follow it under <b>3. Jobs</b>.", "okb");
     await loadJobs(); select(r.job_id);
     $("detailCard").scrollIntoView({behavior: "smooth", block: "start"});
   } catch (e) { banner($("setupMsg"), `✖ ${esc(e.message)}`, "badb"); }
-  finally { $("btnStart").disabled = false; }
-};
+  finally { $("btnStart").disabled = $("rdStart").disabled = false; }
+}
+$("btnStart").onclick = startJob;
+$("rdStart").onclick = startJob;
+$("rdAnalyze").onclick = () => analyze(false);
+document.querySelectorAll(".tab").forEach(b => b.onclick = () => switchTab(b.dataset.tab));
 $("btnExport").onclick = () => selectedJob && (location.href = `/api/jobs/${selectedJob}/log?format=jsonl`);
 $("btnExportCsv").onclick = () => selectedJob && (location.href = `/api/jobs/${selectedJob}/log?format=csv`);
 $("btnOpenFolder").onclick = async () => {
